@@ -97,7 +97,7 @@ import {
 } from 'firebase/auth';
 
 // --- Constants ---
-const NEU_LOGO_URL = "https://upload.wikimedia.org/wikipedia/en/9/9e/New_Era_University_logo.png";
+const NEU_LOGO_URL = "NEU logo.JPG";
 
 // --- Components ---
 

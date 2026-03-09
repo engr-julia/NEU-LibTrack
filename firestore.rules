@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email.lower() == 'admin@neu.edu.ph' || 
+        request.auth.token.email.lower() == 'casterian0715@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    // Allow users to read and write their own profile
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Admin logs
+    match /admin_logs/{logId} {
+      allow create: if request.auth != null;
+      allow read: if isAdmin();
+    }
+
+    // Visitor logs
+    match /visitor_logs/{logId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Backups
+    match /visitLogs_backup/{backupId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    
+    // Blocked users
+    match /blocked_users/{email} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+  }
+}

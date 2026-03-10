@@ -113,7 +113,7 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="p-3 bg-white/80 dark:bg-emerald-900/40 backdrop-blur-md rounded-full border border-white dark:border-emerald-800/30 shadow-lg hover:bg-white dark:hover:bg-emerald-900/60 transition-all text-slate-600 dark:text-emerald-300"
+      className="p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-full border border-white dark:border-slate-700 shadow-lg hover:bg-white dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300"
       title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
     >
       {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
@@ -148,7 +148,7 @@ const Logo = ({ className = "w-24 h-24" }: { className?: string }) => {
 const Button = ({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
   <button 
     className={cn(
-      "px-6 py-3 rounded-xl font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none dark:shadow-none dark:text-slate-100",
+      "px-6 py-3 rounded-xl font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none",
       className
     )} 
     {...props} 
@@ -158,7 +158,7 @@ const Button = ({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonEl
 const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
   <input 
     className={cn(
-      "w-full px-6 py-4 rounded-xl border-2 border-slate-200 focus:border-neu-green focus:outline-none text-xl transition-all bg-white/80 backdrop-blur-sm dark:bg-emerald-950/40 dark:border-emerald-800/30 dark:text-emerald-50 dark:focus:border-emerald-500 dark:placeholder:text-emerald-900/50",
+      "w-full px-6 py-4 rounded-xl border-2 border-slate-200 focus:border-neu-green focus:outline-none text-xl transition-all bg-white/80 backdrop-blur-sm",
       className
     )}
     {...props}
@@ -298,7 +298,7 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
         </div>
       </div>
 
-      <div className="space-y-8 bg-white/40 dark:bg-emerald-950/20 p-10 rounded-[2.5rem] border border-white/60 dark:border-emerald-800/30 backdrop-blur-md shadow-xl transition-colors">
+      <div className="space-y-8 bg-white/40 dark:bg-slate-900/40 p-10 rounded-[2.5rem] border border-white/60 dark:border-slate-800/60 backdrop-blur-md shadow-xl transition-colors">
         {isAdmin ? (
           <div className="space-y-6 py-4">
             <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mx-auto transition-colors">
@@ -310,7 +310,7 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
             </div>
             <Button 
               onClick={() => navigate('/admin')}
-              className="w-full bg-slate-900 dark:bg-emerald-900 text-white py-4 hover:bg-slate-800 dark:hover:bg-emerald-800 transition-all"
+              className="w-full bg-slate-900 dark:bg-slate-800 text-white py-4 hover:bg-slate-800 dark:hover:bg-slate-700 transition-all"
             >
               Go to Admin Dashboard
             </Button>
@@ -325,8 +325,8 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
               autoFocus={!savedName}
               disabled={!!savedName}
               className={cn(
-                "text-center h-20 text-2xl bg-white dark:bg-emerald-950/40 border-slate-200 dark:border-emerald-800/30 text-slate-900 dark:text-emerald-50 transition-colors",
-                savedName && "bg-slate-50 dark:bg-emerald-950/20 border-slate-100 dark:border-emerald-900/20 text-slate-500 dark:text-emerald-700/50 cursor-not-allowed"
+                "text-center h-20 text-2xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white transition-colors",
+                savedName && "bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-500 cursor-not-allowed"
               )}
             />
             <Button 
@@ -375,7 +375,7 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
       {user && (
         <button 
           onClick={() => navigate('/profile')}
-          className="fixed top-6 right-6 flex items-center gap-3 bg-white/80 dark:bg-emerald-950/40 backdrop-blur-md p-2 pr-4 rounded-full border border-white dark:border-emerald-800/30 shadow-lg hover:bg-white dark:hover:bg-emerald-950/60 transition-all group"
+          className="fixed top-6 right-6 flex items-center gap-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-2 pr-4 rounded-full border border-white dark:border-slate-800 shadow-lg hover:bg-white dark:hover:bg-slate-900 transition-all group"
         >
           {user.photoURL ? (
             <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border-2 border-neu-green/20 group-hover:border-neu-green transition-colors" referrerPolicy="no-referrer" />
@@ -455,7 +455,7 @@ const ProfileSection = ({ user, userData, onBack }: { user: any; userData: AppUs
         <h2 className="text-4xl font-bold dark:text-white transition-colors">My Profile</h2>
       </div>
 
-      <div className="bg-white dark:bg-emerald-950/20 rounded-[2.5rem] border border-slate-100 dark:border-emerald-800/30 shadow-xl overflow-hidden transition-colors">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden transition-colors">
         <div className="bg-neu-green/5 dark:bg-neu-green/10 p-10 flex flex-col items-center text-center space-y-4 border-b border-slate-100 dark:border-slate-800 transition-colors">
           <div className="relative">
             {user?.photoURL ? (
@@ -467,7 +467,7 @@ const ProfileSection = ({ user, userData, onBack }: { user: any; userData: AppUs
             )}
             <button 
               onClick={() => setIsEditing(!isEditing)}
-              className="absolute bottom-0 right-0 p-3 bg-white dark:bg-emerald-900 rounded-full shadow-md border border-slate-100 dark:border-emerald-800/30 text-neu-green dark:text-emerald-400 hover:bg-neu-green dark:hover:bg-emerald-600 hover:text-white transition-all"
+              className="absolute bottom-0 right-0 p-3 bg-white dark:bg-slate-800 rounded-full shadow-md border border-slate-100 dark:border-slate-700 text-neu-green dark:text-emerald-400 hover:bg-neu-green dark:hover:bg-emerald-600 hover:text-white transition-all"
             >
               {isEditing ? <X size={20} /> : <Edit2 size={20} />}
             </button>
@@ -481,7 +481,7 @@ const ProfileSection = ({ user, userData, onBack }: { user: any; userData: AppUs
         <div className="p-10 space-y-8">
           <div className="grid grid-cols-1 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 dark:text-emerald-500 uppercase tracking-wider flex items-center gap-2 transition-colors">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2 transition-colors">
                 <User size={14} /> Full Name
               </label>
               {isEditing ? (
@@ -489,52 +489,52 @@ const ProfileSection = ({ user, userData, onBack }: { user: any; userData: AppUs
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Enter your full name"
-                  className="h-14 text-lg bg-white dark:bg-emerald-950/40 border-slate-200 dark:border-emerald-800/30 text-slate-900 dark:text-emerald-50 transition-colors"
+                  className="h-14 text-lg bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white transition-colors"
                 />
               ) : (
-                <p className="text-xl font-medium text-slate-700 dark:text-emerald-300 h-14 flex items-center px-4 bg-slate-50 dark:bg-emerald-950/20 rounded-xl border border-slate-100 dark:border-emerald-900/20 transition-colors">
+                <p className="text-xl font-medium text-slate-700 dark:text-slate-300 h-14 flex items-center px-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
                   {userData?.name || 'Not provided'}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 dark:text-emerald-500 uppercase tracking-wider flex items-center gap-2 transition-colors">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2 transition-colors">
                 <Briefcase size={14} /> User Category
               </label>
               {isEditing ? (
                 <select 
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as UserCategory })}
-                  className="w-full h-14 px-4 rounded-xl border-2 border-slate-100 dark:border-emerald-800/30 focus:border-neu-green focus:outline-none text-lg bg-white dark:bg-emerald-950/40 text-slate-900 dark:text-emerald-50 transition-colors"
+                  className="w-full h-14 px-4 rounded-xl border-2 border-slate-100 dark:border-slate-800 focus:border-neu-green focus:outline-none text-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-colors"
                 >
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
               ) : (
-                <p className="text-xl font-medium text-slate-700 dark:text-emerald-300 h-14 flex items-center px-4 bg-slate-50 dark:bg-emerald-950/20 rounded-xl border border-slate-100 dark:border-emerald-900/20 transition-colors">
+                <p className="text-xl font-medium text-slate-700 dark:text-slate-300 h-14 flex items-center px-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
                   {userData?.category || 'Not provided'}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 dark:text-emerald-500 uppercase tracking-wider flex items-center gap-2 transition-colors">
+              <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2 transition-colors">
                 <Building size={14} /> College / Office
               </label>
               {isEditing ? (
                 <select 
                   value={formData.college}
                   onChange={(e) => setFormData({ ...formData, college: e.target.value as College })}
-                  className="w-full h-14 px-4 rounded-xl border-2 border-slate-100 dark:border-emerald-800/30 focus:border-neu-green focus:outline-none text-lg bg-white dark:bg-emerald-950/40 text-slate-900 dark:text-emerald-50 transition-colors"
+                  className="w-full h-14 px-4 rounded-xl border-2 border-slate-100 dark:border-slate-800 focus:border-neu-green focus:outline-none text-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-colors"
                 >
                   {colleges.map(col => (
                     <option key={col} value={col}>{col}</option>
                   ))}
                 </select>
               ) : (
-                <p className="text-xl font-medium text-slate-700 dark:text-emerald-300 h-14 flex items-center px-4 bg-slate-50 dark:bg-emerald-950/20 rounded-xl border border-slate-100 dark:border-emerald-900/20 transition-colors">
+                <p className="text-xl font-medium text-slate-700 dark:text-slate-300 h-14 flex items-center px-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
                   {userData?.college || 'Not provided'}
                 </p>
               )}
@@ -577,7 +577,7 @@ const CategorySelection = ({ onSelect, onBack }: { onSelect: (category: UserCate
           <button
             key={cat}
             onClick={() => onSelect(cat)}
-            className="group relative bg-white dark:bg-emerald-950/20 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-emerald-800/30 hover:border-neu-green dark:hover:border-emerald-500 hover:shadow-2xl hover:shadow-emerald-100 dark:hover:shadow-none transition-all text-left overflow-hidden"
+            className="group relative bg-white dark:bg-slate-900 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 hover:border-neu-green dark:hover:border-neu-green hover:shadow-2xl hover:shadow-emerald-100 dark:hover:shadow-none transition-all text-left overflow-hidden"
           >
             <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
               <ChevronRight className="text-neu-green dark:text-emerald-400" size={32} />
@@ -623,7 +623,7 @@ const CollegeSelection = ({ onSelect, onBack }: { onSelect: (college: College) =
           <button
             key={college}
             onClick={() => onSelect(college)}
-            className="kiosk-button group dark:bg-emerald-950/20 dark:border-emerald-800/30 dark:hover:border-emerald-500 transition-all"
+            className="kiosk-button group dark:bg-slate-900 dark:border-slate-800 dark:hover:border-neu-green transition-all"
           >
             <School size={40} className="mb-4 text-slate-400 dark:text-slate-500 group-hover:text-neu-blue dark:group-hover:text-emerald-400 transition-colors" />
             <span className="text-xl font-semibold dark:text-white transition-colors">{college}</span>
@@ -692,7 +692,7 @@ const ReasonSelection = ({ onSelect, onBack, isSubmitting }: { onSelect: (reason
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white dark:bg-emerald-950/20 p-10 rounded-[2.5rem] border-2 border-neu-green dark:border-emerald-500 shadow-2xl dark:shadow-none space-y-6 transition-colors"
+              className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border-2 border-neu-green dark:border-neu-green shadow-2xl dark:shadow-none space-y-6 transition-colors"
             >
               <div className="space-y-2">
                 <label className="text-xl font-bold text-slate-900 dark:text-white transition-colors">Please specify your reason:</label>
@@ -701,13 +701,13 @@ const ReasonSelection = ({ onSelect, onBack, isSubmitting }: { onSelect: (reason
                   value={otherReason}
                   onChange={(e) => setOtherReason(e.target.value)}
                   autoFocus
-                  className="h-16 text-xl bg-white dark:bg-emerald-950/40 border-slate-200 dark:border-emerald-800/30 text-slate-900 dark:text-emerald-50 transition-colors"
+                  className="h-16 text-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white transition-colors"
                 />
               </div>
               <div className="flex gap-4">
                 <Button 
                   onClick={() => setSelectedReason(null)}
-                  className="flex-1 bg-slate-100 dark:bg-emerald-900/40 text-slate-600 dark:text-emerald-400 py-4 hover:bg-slate-200 dark:hover:bg-emerald-800/60 transition-all"
+                  className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 py-4 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                 >
                   Back to List
                 </Button>
@@ -726,7 +726,7 @@ const ReasonSelection = ({ onSelect, onBack, isSubmitting }: { onSelect: (reason
                 <button
                   key={reason}
                   onClick={() => handleSelect(reason)}
-                  className="kiosk-button group dark:bg-emerald-950/20 dark:border-emerald-800/30 dark:hover:border-emerald-500 transition-all"
+                  className="kiosk-button group dark:bg-slate-900 dark:border-slate-800 dark:hover:border-neu-green transition-all"
                 >
                   <BookOpen size={40} className="mb-4 text-slate-400 dark:text-slate-500 group-hover:text-neu-blue dark:group-hover:text-emerald-400 transition-colors" />
                   <span className="text-xl font-semibold dark:text-white transition-colors">{reason}</span>
@@ -778,11 +778,11 @@ const VerificationPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 dark:bg-[#05120a] p-6 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 dark:bg-slate-950 p-6 transition-colors">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md w-full bg-white dark:bg-emerald-950/20 p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100 dark:border-emerald-800/30 text-center transition-colors"
+        className="max-w-md w-full bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100 dark:border-slate-800 text-center transition-colors"
       >
         <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6 transition-colors">
           <Mail size={40} />
@@ -874,14 +874,14 @@ const PasswordReauthModal = ({ isOpen, onClose, onConfirm, title, message }: {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password to confirm"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/30 bg-white dark:bg-emerald-950/40 text-slate-900 dark:text-emerald-50 focus:border-red-500 focus:outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
                 />
               </div>
             </div>
-            <div className="p-6 border-t border-slate-100 dark:border-emerald-800/30 bg-slate-50 dark:bg-emerald-950/20 flex gap-3 transition-colors">
-              <Button onClick={onClose} className="flex-1 bg-white dark:bg-emerald-900/40 text-slate-600 dark:text-emerald-300 border border-slate-200 dark:border-emerald-800/30 transition-colors">
+            <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex gap-3 transition-colors">
+              <Button onClick={onClose} className="flex-1 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors">
                 Cancel
               </Button>
               <Button 
@@ -1001,14 +1001,14 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
             </span>
             <button
               onClick={() => handleActionClick('bulk_restore')}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all"
             >
               <RefreshCw size={18} />
               Restore Selected
             </button>
             <button
               onClick={() => handleActionClick('bulk_delete')}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
             >
               <Trash2 size={18} />
               Delete Permanently
@@ -1063,14 +1063,14 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
                       {log.photoURL ? (
                         <img src={log.photoURL} alt="" className="w-10 h-10 rounded-full border border-slate-100 dark:border-slate-700" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="w-10 h-10 bg-slate-100 dark:bg-emerald-900/40 text-slate-500 dark:text-emerald-400 rounded-full flex items-center justify-center font-bold text-xs">
+                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-full flex items-center justify-center font-bold text-xs">
                           {log.name.charAt(0)}
                         </div>
                       )}
                       <div>
                         <p className="font-bold text-slate-900 dark:text-white">{log.name}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">{log.email}</p>
-                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-emerald-900/40 text-slate-500 dark:text-emerald-400 rounded text-[10px] font-bold uppercase">{log.category}</span>
+                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded text-[10px] font-bold uppercase">{log.category}</span>
                       </div>
                     </div>
                   </td>
@@ -1127,93 +1127,12 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
   );
 };
 
-const BackupDetailsModal = ({ isOpen, onClose, backup }: { isOpen: boolean; onClose: () => void; backup: any }) => {
-  if (!backup) return null;
-  
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="modal-overlay"
-          onClick={onClose}
-        >
-          <motion.div 
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20 }}
-            className="modal-content max-w-4xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="p-6 border-b border-slate-100 dark:border-emerald-800/30 flex justify-between items-center bg-emerald-50/50 dark:bg-emerald-950/20">
-              <div className="flex items-center gap-3 text-neu-green dark:text-emerald-400">
-                <History size={24} />
-                <div>
-                  <h3 className="text-xl font-bold">Backup Snapshot Details</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {backup.backupDate ? format(backup.backupDate, 'MMMM dd, yyyy HH:mm:ss') : 'N/A'}
-                  </p>
-                </div>
-              </div>
-              <button onClick={onClose} className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-full transition-colors">
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div className="p-0 overflow-y-auto max-h-[60vh]">
-              <table className="w-full text-left">
-                <thead className="sticky top-0 bg-slate-50 dark:bg-emerald-900/60 z-10">
-                  <tr>
-                    <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Visitor</th>
-                    <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">College</th>
-                    <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Reason</th>
-                    <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {backup.data?.map((log: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="p-4">
-                        <p className="font-bold text-sm text-slate-900 dark:text-slate-100">{log.name}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{log.email}</p>
-                      </td>
-                      <td className="p-4 text-sm text-slate-600 dark:text-slate-300">{log.college}</td>
-                      <td className="p-4 text-sm text-slate-600 dark:text-slate-300">{log.reason}</td>
-                      <td className="p-4 text-sm text-slate-600 dark:text-slate-300">
-                        {log.timestamp ? (
-                          typeof log.timestamp.toDate === 'function' 
-                            ? format(log.timestamp.toDate(), 'MMM dd, yyyy')
-                            : format(new Date(log.timestamp), 'MMM dd, yyyy')
-                        ) : 'N/A'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            <div className="p-6 border-t border-slate-100 dark:border-emerald-800/30 bg-slate-50 dark:bg-emerald-950/20 flex justify-end">
-              <Button onClick={onClose} className="bg-slate-200 dark:bg-emerald-900/40 text-slate-700 dark:text-emerald-300 hover:bg-slate-300 dark:hover:bg-emerald-800/60">
-                Close
-              </Button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-};
-
 const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
   const { user: adminUser, role } = useAuth();
   const [backups, setBackups] = useState<any[]>([]);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isReauthOpen, setIsReauthOpen] = useState(false);
   const [selectedBackupId, setSelectedBackupId] = useState<string | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [selectedBackup, setSelectedBackup] = useState<any>(null);
 
   useEffect(() => {
     if (adminUser && role === 'admin') {
@@ -1224,18 +1143,10 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
 
   const handleManualBackup = async () => {
     if (!adminUser?.email) return;
-    
-    // Requirement: Check if there are active logs to backup
-    const activeLogs = logs.filter(l => (l.status || 'active') === 'active');
-    if (activeLogs.length === 0) {
-      toast.error("There are no active visit logs to back up.");
-      return;
-    }
-
     setIsBackingUp(true);
     const loadingToast = toast.loading("Creating system backup...");
     try {
-      await createBackup(activeLogs, adminUser.email, 'manual');
+      await createBackup(logs, adminUser.email, 'manual');
       toast.success("Backup created successfully!", { id: loadingToast });
     } catch (error) {
       console.error("Backup error:", error);
@@ -1247,14 +1158,7 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
 
   const handleRestoreClick = (backupId: string) => {
     setSelectedBackupId(backupId);
-    const backup = backups.find(b => b.id === backupId);
-    setSelectedBackup(backup);
     setIsReauthOpen(true);
-  };
-
-  const handleViewDetails = (backup: any) => {
-    setSelectedBackup(backup);
-    setIsDetailsOpen(true);
   };
 
   const handleConfirmRestore = async (password: string) => {
@@ -1279,7 +1183,6 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
     } finally {
       setIsBackingUp(false);
       setSelectedBackupId(null);
-      setSelectedBackup(null);
     }
   };
 
@@ -1293,7 +1196,7 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
         <Button 
           onClick={handleManualBackup}
           disabled={isBackingUp}
-          className="bg-neu-green dark:bg-emerald-600 text-white flex items-center gap-2 shadow-lg shadow-emerald-100 dark:shadow-none transition-all hover:bg-emerald-700 dark:hover:bg-emerald-500"
+          className="bg-neu-green text-white flex items-center gap-2 shadow-lg shadow-emerald-100 dark:shadow-none transition-all"
         >
           <Database size={20} />
           {isBackingUp ? 'Creating Backup...' : 'Create Manual Backup'}
@@ -1302,17 +1205,17 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {backups.map((backup) => (
-          <div key={backup.id} className="admin-card space-y-4 transition-colors group">
+          <div key={backup.id} className="admin-card space-y-4 transition-colors">
             <div className="flex justify-between items-start">
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 text-neu-green dark:text-emerald-400 rounded-xl transition-colors">
+              <div className="p-3 bg-emerald-50 dark:bg-neu-green/10 text-neu-green rounded-xl transition-colors">
                 <History size={24} />
               </div>
-              <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 dark:bg-emerald-900/40 text-slate-500 dark:text-emerald-400 rounded-lg uppercase transition-colors">
+              <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg uppercase transition-colors">
                 {backup.recordCount} Records
               </span>
             </div>
             <div>
-              <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Backup Date</p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Backup Date</p>
               <h4 className="text-lg font-bold text-slate-900 dark:text-white">
                 {backup.backupDate ? format(backup.backupDate, 'MMMM dd, yyyy') : 'Processing...'}
               </h4>
@@ -1333,16 +1236,13 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
               <span>By: {backup.triggeredBy || 'System'}</span>
             </div>
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2 transition-colors">
-              <button 
-                onClick={() => handleViewDetails(backup)}
-                className="flex-1 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-neu-green dark:hover:text-emerald-400 transition-colors"
-              >
+              <button className="flex-1 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-neu-green dark:hover:text-neu-green transition-colors">
                 View Details
               </button>
               <button 
                 onClick={() => handleRestoreClick(backup.id)}
                 disabled={isBackingUp}
-                className="flex-1 py-2 text-xs font-bold text-neu-green dark:text-emerald-500 hover:underline disabled:opacity-50"
+                className="flex-1 py-2 text-xs font-bold text-neu-green hover:underline disabled:opacity-50"
               >
                 {isBackingUp && selectedBackupId === backup.id ? 'Restoring...' : 'Restore Snapshot'}
               </button>
@@ -1350,36 +1250,19 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
           </div>
         ))}
         {backups.length === 0 && (
-          <div className="col-span-full py-20 text-center bg-white dark:bg-emerald-950/20 rounded-[2.5rem] border border-slate-100 dark:border-emerald-800/30 transition-colors">
+          <div className="col-span-full py-20 text-center bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 transition-colors">
             <Database size={48} className="mx-auto text-slate-200 dark:text-slate-700 mb-4 transition-colors" />
             <p className="text-slate-400 dark:text-slate-500 font-medium transition-colors">No backups found.</p>
           </div>
         )}
       </div>
 
-      <BackupDetailsModal 
-        isOpen={isDetailsOpen}
-        onClose={() => setIsDetailsOpen(false)}
-        backup={selectedBackup}
-      />
-
       <PasswordReauthModal 
         isOpen={isReauthOpen}
         onClose={() => setIsReauthOpen(false)}
         onConfirm={handleConfirmRestore}
         title="Restore Backup Confirmation"
-        message={selectedBackup ? (
-          <div className="space-y-2">
-            <p>This will overwrite or add records to the current logs from this backup snapshot.</p>
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800/60">
-              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase">Snapshot Details:</p>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {selectedBackup.recordCount} records from {selectedBackup.backupDate ? format(selectedBackup.backupDate, 'MMM dd, yyyy HH:mm') : 'N/A'}
-              </p>
-            </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 italic">Please verify your admin password to proceed.</p>
-          </div>
-        ) : "Please verify your admin password to proceed."}
+        message="This will overwrite or add records to the current logs from this backup snapshot. Please verify your admin password."
       />
     </div>
   );
@@ -1421,7 +1304,7 @@ const AdminSidebar = ({
 
   const sidebarContent = (
     <div className={cn(
-      "bg-white dark:bg-[#05120a] border-r border-slate-200 dark:border-emerald-900/30 h-screen sticky top-0 flex flex-col transition-all duration-300 ease-in-out z-50",
+      "bg-white dark:bg-[#020617] border-r border-slate-200 dark:border-slate-800/60 h-screen sticky top-0 flex flex-col transition-all duration-300 ease-in-out z-50",
       isCollapsed ? "w-20" : "w-64"
     )}>
       <div className={cn(
@@ -1473,7 +1356,7 @@ const AdminSidebar = ({
       
       {/* Profile Section */}
       <div className={cn(
-        "p-4 mx-4 mb-2 bg-slate-50 dark:bg-emerald-950/20 rounded-2xl flex items-center gap-3 border border-slate-100 dark:border-emerald-800/30 transition-all overflow-hidden",
+        "p-4 mx-4 mb-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex items-center gap-3 border border-slate-100 dark:border-slate-800 transition-all overflow-hidden",
         isCollapsed ? "px-2 mx-2 justify-center" : ""
       )}>
         {user?.photoURL ? (
@@ -1557,7 +1440,7 @@ const StatCard = ({ title, value, icon: Icon, trend, color = "emerald" }: { titl
         color === "emerald" ? "bg-emerald-50 dark:bg-neu-green/10 text-neu-green" : 
         color === "blue" ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" :
         color === "amber" ? "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400" :
-        "bg-slate-50 dark:bg-emerald-900/40 text-slate-600 dark:text-emerald-400"
+        "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
       )}>
         <Icon size={24} />
       </div>
@@ -1602,7 +1485,7 @@ const ExportButton = ({ data, filename }: { data: any[], filename: string }) => 
   };
 
   return (
-    <Button onClick={handleExport} className="flex items-center gap-2 bg-white dark:bg-emerald-900/40 text-slate-700 dark:text-emerald-300 border border-slate-200 dark:border-emerald-800/30 hover:bg-slate-50 dark:hover:bg-emerald-800/60 transition-all">
+    <Button onClick={handleExport} className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
       <Download size={18} />
       Export CSV
     </Button>
@@ -1699,7 +1582,7 @@ const AdminUserSearch = ({ users }: { users: AppUser[] }) => {
               <h4 className="font-bold text-slate-900 dark:text-white truncate transition-colors">{u.name || 'No Name'}</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate transition-colors">{u.email}</p>
               <div className="flex gap-2 mt-2">
-                <span className="px-2 py-0.5 bg-slate-100 dark:bg-emerald-900/40 text-slate-600 dark:text-emerald-300 rounded text-[10px] font-bold uppercase transition-colors">{u.category || 'N/A'}</span>
+                <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded text-[10px] font-bold uppercase transition-colors">{u.category || 'N/A'}</span>
                 <span className="px-2 py-0.5 bg-emerald-50 dark:bg-neu-green/10 text-neu-green rounded text-[10px] font-bold uppercase truncate max-w-[100px] transition-colors">{u.college || 'N/A'}</span>
               </div>
             </div>
@@ -1707,7 +1590,7 @@ const AdminUserSearch = ({ users }: { users: AppUser[] }) => {
         ))}
       </div>
       {filteredUsers.length === 0 && (
-        <div className="text-center py-20 bg-white dark:bg-emerald-950/20 rounded-[2.5rem] border border-slate-100 dark:border-emerald-800/30 transition-colors">
+        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 transition-colors">
           <p className="text-slate-400 dark:text-slate-500 font-medium">No users found matching your criteria.</p>
         </div>
       )}
@@ -1735,10 +1618,10 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse p-8">
-        <div className="h-12 bg-slate-100 dark:bg-emerald-900/40 rounded-xl" />
+        <div className="h-12 bg-slate-100 dark:bg-slate-800 rounded-xl" />
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="h-16 bg-slate-50 dark:bg-emerald-950/20 rounded-xl" />
+            <div key={i} className="h-16 bg-slate-50 dark:bg-slate-800/50 rounded-xl" />
           ))}
         </div>
       </div>
@@ -2023,7 +1906,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
                       type="checkbox" 
                       checked={isSelected}
                       onChange={() => toggleSelectLog(log.id)}
-                      className="w-4 h-4 rounded border-slate-300 dark:border-emerald-800/30 text-neu-green focus:ring-neu-green bg-white dark:bg-emerald-950/40 transition-colors"
+                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-neu-green focus:ring-neu-green bg-white dark:bg-slate-800 transition-colors"
                     />
                   </td>
                   <td className="py-4">
@@ -2051,7 +1934,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
                   </td>
                   <td className="py-4">
                     <div className="flex flex-col gap-1">
-                      <span className="px-3 py-1 bg-slate-100 dark:bg-emerald-900/40 text-slate-600 dark:text-emerald-300 rounded-full text-xs font-bold w-fit">
+                      <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-bold w-fit">
                         {log.reason}
                       </span>
                       {log.otherReason && (
@@ -2211,11 +2094,11 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 dark:bg-[#05120a] p-6 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 dark:bg-[#020617] p-6 transition-colors">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md w-full bg-white dark:bg-emerald-950/20 p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100 dark:border-emerald-800/40 backdrop-blur-md transition-colors"
+        className="max-w-md w-full bg-white dark:bg-slate-900/40 p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100 dark:border-slate-800/60 backdrop-blur-md transition-colors"
       >
         <div className="text-center mb-10">
           <Logo className="w-24 h-24 mx-auto mb-4" />
@@ -2233,7 +2116,7 @@ const LoginPage = () => {
           <button 
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-6 py-6 rounded-2xl border-2 border-slate-200 dark:border-emerald-800/30 bg-white dark:bg-emerald-950/20 text-slate-700 dark:text-emerald-50 font-bold text-lg hover:bg-slate-50 dark:hover:bg-emerald-900/40 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-slate-100 dark:shadow-none dark:backdrop-blur-sm"
+            className="w-full flex items-center justify-center gap-3 px-6 py-6 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-700 dark:text-slate-200 font-bold text-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-slate-100 dark:shadow-none dark:backdrop-blur-sm"
           >
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-6 h-6" referrerPolicy="no-referrer" />
             Sign in with Google
@@ -2291,16 +2174,16 @@ const DashboardAnalytics = ({ logs, loading }: { logs: VisitorLog[], loading?: b
     return (
       <div className="space-y-8 animate-pulse">
         <div className="flex justify-between items-center">
-          <div className="h-10 w-64 bg-slate-200 dark:bg-emerald-900/40 rounded-xl" />
+          <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800 rounded-xl" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-32 bg-slate-200 dark:bg-emerald-900/40 rounded-[2rem]" />
+            <div key={i} className="h-32 bg-slate-200 dark:bg-slate-800 rounded-[2rem]" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="h-96 bg-slate-200 dark:bg-emerald-900/40 rounded-[2rem]" />
-          <div className="h-96 bg-slate-200 dark:bg-emerald-900/40 rounded-[2rem]" />
+          <div className="h-96 bg-slate-200 dark:bg-slate-800 rounded-[2rem]" />
+          <div className="h-96 bg-slate-200 dark:bg-slate-800 rounded-[2rem]" />
         </div>
       </div>
     );
@@ -2393,7 +2276,7 @@ const DashboardAnalytics = ({ logs, loading }: { logs: VisitorLog[], loading?: b
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-colors">
-        <div className="flex bg-white dark:bg-emerald-950/20 p-1 rounded-xl border border-slate-200 dark:border-emerald-800/30 shadow-sm transition-colors">
+        <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
           <button 
             onClick={() => setTimeFilter('today')}
             className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", timeFilter === 'today' ? "bg-neu-green text-white" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800")}
@@ -2422,9 +2305,9 @@ const DashboardAnalytics = ({ logs, loading }: { logs: VisitorLog[], loading?: b
 
         {timeFilter === 'custom' && (
           <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4 transition-colors">
-            <input type="date" value={customRange.start} onChange={e => setCustomRange({ ...customRange, start: e.target.value })} className="px-3 py-2 rounded-lg border border-slate-200 dark:border-emerald-800/30 bg-white dark:bg-emerald-950/40 text-slate-900 dark:text-emerald-50 text-sm focus:border-neu-green focus:outline-none transition-colors" />
+            <input type="date" value={customRange.start} onChange={e => setCustomRange({ ...customRange, start: e.target.value })} className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:border-neu-green focus:outline-none transition-colors" />
             <span className="text-slate-400">to</span>
-            <input type="date" value={customRange.end} onChange={e => setCustomRange({ ...customRange, end: e.target.value })} className="px-3 py-2 rounded-lg border border-slate-200 dark:border-emerald-800/30 bg-white dark:bg-emerald-950/40 text-slate-900 dark:text-emerald-50 text-sm focus:border-neu-green focus:outline-none transition-colors" />
+            <input type="date" value={customRange.end} onChange={e => setCustomRange({ ...customRange, end: e.target.value })} className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:border-neu-green focus:outline-none transition-colors" />
           </div>
         )}
       </div>
@@ -2599,7 +2482,7 @@ const AdminUserGuide = () => {
               <ul className="space-y-2">
                 {section.steps.map((step, i) => (
                   <li key={i} className="flex gap-3 text-sm text-slate-500 dark:text-slate-400 transition-colors">
-                    <span className="flex-shrink-0 w-5 h-5 bg-slate-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-400 dark:text-emerald-700 transition-colors">
+                    <span className="flex-shrink-0 w-5 h-5 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-400 dark:text-slate-500 transition-colors">
                       {i + 1}
                     </span>
                     {step}
@@ -2611,7 +2494,7 @@ const AdminUserGuide = () => {
         ))}
       </div>
 
-      <div className="admin-card bg-slate-900 dark:bg-emerald-950/40 text-white border-none transition-colors">
+      <div className="admin-card bg-slate-900 dark:bg-slate-950 text-white border-none transition-colors">
         <div className="flex items-center gap-4 mb-8">
           <div className="p-3 bg-white/10 dark:bg-emerald-400/10 text-emerald-400 rounded-xl transition-colors">
             <Info size={24} />
@@ -2723,7 +2606,7 @@ const AdminUserDetail = ({
               {userLogs.map((ul) => (
                 <div key={ul.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className="p-2 bg-slate-50 dark:bg-emerald-950/20 rounded-lg text-slate-400 dark:text-emerald-700 transition-colors">
+                    <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 dark:text-slate-500 transition-colors">
                       <Clock size={20} />
                     </div>
                     <div>
@@ -2963,17 +2846,17 @@ function AppContent() {
 
   if (isInitialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-emerald-50/10 dark:bg-[#05120a]">
+      <div className="min-h-screen flex items-center justify-center bg-emerald-50/10 dark:bg-[#020617]">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-neu-green border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-slate-500 dark:text-emerald-400 font-medium">Connecting to NEU LibTrack...</p>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Connecting to NEU LibTrack...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-emerald-50/30 dark:bg-[#05120a] transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-emerald-50/30 dark:bg-[#020617] transition-colors duration-300">
       <div className="fixed bottom-6 left-6 z-50">
         <ThemeToggle />
       </div>
@@ -2981,7 +2864,7 @@ function AppContent() {
         {/* Kiosk Routes */}
         <Route path="/" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30 dark:bg-[#05120a]">
+            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30 dark:bg-[#020617]">
               <KioskHome 
                 savedName={userRoleData?.name}
                 userData={userRoleData}
@@ -3007,7 +2890,7 @@ function AppContent() {
         <Route path="/verify" element={<VerificationPage />} />
         <Route path="/profile" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#05120a]">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#020617]">
               <ProfileSection 
                 user={user}
                 userData={userRoleData}
@@ -3018,7 +2901,7 @@ function AppContent() {
         } />
         <Route path="/category" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#05120a]">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#020617]">
               <CategorySelection 
                 onBack={() => navigate('/')}
                 onSelect={(category) => {
@@ -3036,7 +2919,7 @@ function AppContent() {
         } />
         <Route path="/college" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#05120a]">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#020617]">
               <CollegeSelection 
                 onBack={() => {
                   if (userRoleData?.category) {
@@ -3055,7 +2938,7 @@ function AppContent() {
         } />
         <Route path="/reason" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#05120a]">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#020617]">
               <ReasonSelection 
                 onBack={() => {
                   if (userRoleData?.college) {
@@ -3076,7 +2959,7 @@ function AppContent() {
         } />
         <Route path="/success" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30 dark:bg-[#05120a]">
+            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30 dark:bg-[#020617]">
               <SuccessScreen />
             </div>
           </ProtectedRoute>
@@ -3085,7 +2968,7 @@ function AppContent() {
         {/* Admin Routes */}
         <Route path="/admin/*" element={
           <ProtectedRoute allowedRole="admin">
-            <div className="flex min-h-screen bg-emerald-50/10 dark:bg-[#05120a] transition-colors">
+            <div className="flex min-h-screen bg-emerald-50/10 dark:bg-[#020617] transition-colors">
               <AdminSidebar 
                 isCollapsed={isSidebarCollapsed} 
                 setIsCollapsed={setIsSidebarCollapsed}
@@ -3094,7 +2977,7 @@ function AppContent() {
               />
               <main className="flex-1 overflow-auto">
                 {/* Mobile Header */}
-                <header className="lg:hidden bg-white dark:bg-[#05120a] border-b border-slate-200 dark:border-emerald-900/30 p-4 sticky top-0 z-30 flex items-center justify-between transition-colors">
+                <header className="lg:hidden bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800/60 p-4 sticky top-0 z-30 flex items-center justify-between transition-colors">
                   <div className="flex items-center gap-3">
                     <Logo className="w-8 h-8" />
                     <span className="font-bold text-xl tracking-tight dark:text-white">LibTrack</span>
@@ -3116,7 +2999,7 @@ function AppContent() {
                           <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">Dashboard Overview</h1>
                           <p className="text-slate-500 dark:text-slate-400 transition-colors">Real-time analytics and visitor insights.</p>
                         </div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-emerald-400 bg-white dark:bg-emerald-950/40 px-4 py-2 rounded-lg border border-slate-200 dark:border-emerald-800/30 transition-colors">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 transition-colors">
                           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                           <Clock size={16} />
                           Live: {format(currentTime, 'HH:mm:ss')}

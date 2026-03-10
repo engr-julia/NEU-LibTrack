@@ -38,7 +38,12 @@ import {
   RefreshCw,
   History,
   AlertTriangle,
-  Lock
+  Lock,
+  Sun,
+  Moon,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { format, subDays, isToday, isThisWeek } from 'date-fns';
@@ -77,15 +82,17 @@ import {
   clearAllLogs,
   softDeleteAllLogs,
   bulkDeleteLogs,
+  bulkPermanentDeleteLogs,
+  bulkRestoreLogs,
   createBackup,
   subscribeToBackups,
-  promoteUserToAdmin,
   restoreBackup,
   updateUserRole
 } from './services/firestoreService';
 
 import { auth, googleProvider } from './firebase';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useTheme } from './contexts/ThemeContext';
 import { 
   signInWithEmailAndPassword, 
   signInWithPopup, 
@@ -97,9 +104,22 @@ import {
 } from 'firebase/auth';
 
 // --- Constants ---
-const NEU_LOGO_URL = "NEU logo.JPG";
+const NEU_LOGO_URL = "https://raw.githubusercontent.com/engr-julia/NEU-LibTrack/main/src/NEU%20logo.JPG";
 
 // --- Components ---
+
+const ThemeToggle = () => {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <button
+      onClick={toggleTheme}
+      className="p-3 bg-white/80 dark:bg-emerald-900/40 backdrop-blur-md rounded-full border border-white dark:border-emerald-800/30 shadow-lg hover:bg-white dark:hover:bg-emerald-900/60 transition-all text-slate-600 dark:text-emerald-300"
+      title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+    >
+      {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+    </button>
+  );
+};
 
 const Logo = ({ className = "w-24 h-24" }: { className?: string }) => {
   const [error, setError] = useState(false);
@@ -113,20 +133,22 @@ const Logo = ({ className = "w-24 h-24" }: { className?: string }) => {
   }
 
   return (
-    <img 
-      src={NEU_LOGO_URL} 
-      alt="NEU Logo" 
-      className={cn("object-contain", className)}
-      referrerPolicy="no-referrer"
-      onError={() => setError(true)}
-    />
+    <div className={cn("rounded-full overflow-hidden border-2 border-white/20 shadow-lg bg-white", className)}>
+      <img 
+        src={NEU_LOGO_URL} 
+        alt="NEU Logo" 
+        className="w-full h-full object-cover"
+        referrerPolicy="no-referrer"
+        onError={() => setError(true)}
+      />
+    </div>
   );
 };
 
 const Button = ({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
   <button 
     className={cn(
-      "px-6 py-3 rounded-xl font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none",
+      "px-6 py-3 rounded-xl font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none dark:shadow-none dark:text-slate-100",
       className
     )} 
     {...props} 
@@ -136,7 +158,7 @@ const Button = ({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonEl
 const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
   <input 
     className={cn(
-      "w-full px-6 py-4 rounded-xl border-2 border-slate-200 focus:border-neu-green focus:outline-none text-xl transition-all bg-white/80 backdrop-blur-sm",
+      "w-full px-6 py-4 rounded-xl border-2 border-slate-200 focus:border-neu-green focus:outline-none text-xl transition-all bg-white/80 backdrop-blur-sm dark:bg-emerald-950/40 dark:border-emerald-800/30 dark:text-emerald-50 dark:focus:border-emerald-500 dark:placeholder:text-emerald-900/50",
       className
     )}
     {...props}
@@ -265,30 +287,30 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
           transition={{ type: 'spring', damping: 15 }}
           className="relative inline-block"
         >
-          <div className="absolute -inset-4 bg-neu-green/10 rounded-full blur-2xl animate-pulse" />
+          <div className="absolute -inset-4 bg-neu-green/10 dark:bg-neu-green/5 rounded-full blur-2xl animate-pulse" />
           <Logo className="w-40 h-40 relative z-10 drop-shadow-2xl" />
         </motion.div>
         <div className="space-y-2">
-          <h1 className="text-6xl font-black tracking-tight text-slate-900">
+          <h1 className="text-6xl font-black tracking-tight text-slate-900 dark:text-white transition-colors">
             NEU <span className="text-neu-green">LibTrack</span>
           </h1>
-          <p className="text-xl text-slate-500 font-medium">New Era University Library Visitor System</p>
+          <p className="text-xl text-slate-500 dark:text-slate-400 font-medium transition-colors">New Era University Library Visitor System</p>
         </div>
       </div>
 
-      <div className="space-y-8 bg-white/40 p-10 rounded-[2.5rem] border border-white/60 backdrop-blur-md shadow-xl">
+      <div className="space-y-8 bg-white/40 dark:bg-emerald-950/20 p-10 rounded-[2.5rem] border border-white/60 dark:border-emerald-800/30 backdrop-blur-md shadow-xl transition-colors">
         {isAdmin ? (
           <div className="space-y-6 py-4">
-            <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mx-auto transition-colors">
               <ShieldAlert size={32} />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900">Admin Mode Active</h3>
-              <p className="text-slate-500">Administrators are restricted from logging library visits. Please use the dashboard to manage the system.</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">Admin Mode Active</h3>
+              <p className="text-slate-500 dark:text-slate-400 transition-colors">Administrators are restricted from logging library visits. Please use the dashboard to manage the system.</p>
             </div>
             <Button 
               onClick={() => navigate('/admin')}
-              className="w-full bg-slate-900 text-white py-4"
+              className="w-full bg-slate-900 dark:bg-emerald-900 text-white py-4 hover:bg-slate-800 dark:hover:bg-emerald-800 transition-all"
             >
               Go to Admin Dashboard
             </Button>
@@ -303,14 +325,14 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
               autoFocus={!savedName}
               disabled={!!savedName}
               className={cn(
-                "text-center h-20 text-2xl",
-                savedName && "bg-slate-50 border-slate-100 text-slate-500 cursor-not-allowed"
+                "text-center h-20 text-2xl bg-white dark:bg-emerald-950/40 border-slate-200 dark:border-emerald-800/30 text-slate-900 dark:text-emerald-50 transition-colors",
+                savedName && "bg-slate-50 dark:bg-emerald-950/20 border-slate-100 dark:border-emerald-900/20 text-slate-500 dark:text-emerald-700/50 cursor-not-allowed"
               )}
             />
             <Button 
               onClick={handleProceed}
               disabled={!input}
-              className="w-full bg-neu-green text-white text-2xl py-6 shadow-lg shadow-emerald-200 hover:bg-emerald-700 hover:shadow-emerald-300 transition-all"
+              className="w-full bg-neu-green text-white text-2xl py-6 shadow-lg shadow-emerald-200 dark:shadow-none hover:bg-emerald-700 transition-all"
             >
               {savedName ? "Proceed to Log Visit" : "Register Name & Proceed"}
             </Button>
@@ -318,7 +340,7 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
             {savedName && (
               <button 
                 onClick={() => navigate('/profile')}
-                className="w-full py-2 text-slate-400 hover:text-neu-green transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                className="w-full py-2 text-slate-400 dark:text-slate-500 hover:text-neu-green dark:hover:text-emerald-400 transition-colors text-sm font-medium flex items-center justify-center gap-2"
               >
                 <User size={16} /> Update Profile Information
               </button>
@@ -327,11 +349,11 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
         )}
 
         {!isAdmin && (
-          <p className="text-slate-500 text-sm">
+          <p className="text-slate-500 dark:text-slate-400 text-sm transition-colors">
             By clicking proceed, you agree to follow the{' '}
             <button 
               onClick={() => setIsRulesOpen(true)}
-              className="text-neu-green font-bold hover:underline underline-offset-4"
+              className="text-neu-green dark:text-emerald-400 font-bold hover:underline underline-offset-4"
             >
               Library Rules and Regulations
             </button>
@@ -341,7 +363,7 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
 
       <button 
         onClick={handleLogout}
-        className="flex items-center gap-2 mx-auto text-slate-400 hover:text-red-500 transition-colors font-medium"
+        className="flex items-center gap-2 mx-auto text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors font-medium"
       >
         <LogOut size={20} />
         Sign Out from LibTrack
@@ -353,7 +375,7 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
       {user && (
         <button 
           onClick={() => navigate('/profile')}
-          className="fixed top-6 right-6 flex items-center gap-3 bg-white/80 backdrop-blur-md p-2 pr-4 rounded-full border border-white shadow-lg hover:bg-white transition-all group"
+          className="fixed top-6 right-6 flex items-center gap-3 bg-white/80 dark:bg-emerald-950/40 backdrop-blur-md p-2 pr-4 rounded-full border border-white dark:border-emerald-800/30 shadow-lg hover:bg-white dark:hover:bg-emerald-950/60 transition-all group"
         >
           {user.photoURL ? (
             <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border-2 border-neu-green/20 group-hover:border-neu-green transition-colors" referrerPolicy="no-referrer" />
@@ -363,8 +385,8 @@ const KioskHome = ({ onNext, savedName, userData }: { onNext: (data: { name: str
             </div>
           )}
           <div className="text-left">
-            <p className="text-xs font-bold text-slate-900 leading-tight">{userData?.name || user.email?.split('@')[0]}</p>
-            <p className="text-[10px] text-slate-500 flex items-center gap-1">
+            <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight transition-colors">{userData?.name || user.email?.split('@')[0]}</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 transition-colors">
               View Profile <ChevronRight size={8} />
             </p>
           </div>
@@ -427,39 +449,39 @@ const ProfileSection = ({ user, userData, onBack }: { user: any; userData: AppUs
       className="max-w-2xl mx-auto space-y-8 py-8"
     >
       <div className="flex items-center gap-4">
-        <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+        <button onClick={onBack} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors dark:text-white">
           <ArrowLeft size={32} />
         </button>
-        <h2 className="text-4xl font-bold">My Profile</h2>
+        <h2 className="text-4xl font-bold dark:text-white transition-colors">My Profile</h2>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
-        <div className="bg-neu-green/5 p-10 flex flex-col items-center text-center space-y-4 border-b border-slate-100">
+      <div className="bg-white dark:bg-emerald-950/20 rounded-[2.5rem] border border-slate-100 dark:border-emerald-800/30 shadow-xl overflow-hidden transition-colors">
+        <div className="bg-neu-green/5 dark:bg-neu-green/10 p-10 flex flex-col items-center text-center space-y-4 border-b border-slate-100 dark:border-slate-800 transition-colors">
           <div className="relative">
             {user?.photoURL ? (
-              <img src={user.photoURL} alt="Profile" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" referrerPolicy="no-referrer" />
+              <img src={user.photoURL} alt="Profile" className="w-32 h-32 rounded-full border-4 border-white dark:border-slate-800 shadow-lg transition-colors" referrerPolicy="no-referrer" />
             ) : (
-              <div className="w-32 h-32 bg-neu-green text-white rounded-full flex items-center justify-center text-4xl font-bold border-4 border-white shadow-lg">
+              <div className="w-32 h-32 bg-neu-green text-white rounded-full flex items-center justify-center text-4xl font-bold border-4 border-white dark:border-slate-800 shadow-lg transition-colors">
                 {user?.email?.charAt(0).toUpperCase()}
               </div>
             )}
             <button 
               onClick={() => setIsEditing(!isEditing)}
-              className="absolute bottom-0 right-0 p-3 bg-white rounded-full shadow-md border border-slate-100 text-neu-green hover:bg-neu-green hover:text-white transition-all"
+              className="absolute bottom-0 right-0 p-3 bg-white dark:bg-emerald-900 rounded-full shadow-md border border-slate-100 dark:border-emerald-800/30 text-neu-green dark:text-emerald-400 hover:bg-neu-green dark:hover:bg-emerald-600 hover:text-white transition-all"
             >
               {isEditing ? <X size={20} /> : <Edit2 size={20} />}
             </button>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-900">{userData?.name || 'No Name Set'}</h3>
-            <p className="text-slate-500 font-medium">{user?.email}</p>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white transition-colors">{userData?.name || 'No Name Set'}</h3>
+            <p className="text-slate-500 dark:text-slate-400 font-medium transition-colors">{user?.email}</p>
           </div>
         </div>
 
         <div className="p-10 space-y-8">
           <div className="grid grid-cols-1 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <label className="text-xs font-bold text-slate-400 dark:text-emerald-500 uppercase tracking-wider flex items-center gap-2 transition-colors">
                 <User size={14} /> Full Name
               </label>
               {isEditing ? (
@@ -467,52 +489,52 @@ const ProfileSection = ({ user, userData, onBack }: { user: any; userData: AppUs
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Enter your full name"
-                  className="h-14 text-lg"
+                  className="h-14 text-lg bg-white dark:bg-emerald-950/40 border-slate-200 dark:border-emerald-800/30 text-slate-900 dark:text-emerald-50 transition-colors"
                 />
               ) : (
-                <p className="text-xl font-medium text-slate-700 h-14 flex items-center px-4 bg-slate-50 rounded-xl border border-slate-100">
+                <p className="text-xl font-medium text-slate-700 dark:text-emerald-300 h-14 flex items-center px-4 bg-slate-50 dark:bg-emerald-950/20 rounded-xl border border-slate-100 dark:border-emerald-900/20 transition-colors">
                   {userData?.name || 'Not provided'}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <label className="text-xs font-bold text-slate-400 dark:text-emerald-500 uppercase tracking-wider flex items-center gap-2 transition-colors">
                 <Briefcase size={14} /> User Category
               </label>
               {isEditing ? (
                 <select 
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as UserCategory })}
-                  className="w-full h-14 px-4 rounded-xl border-2 border-slate-100 focus:border-neu-green focus:outline-none text-lg bg-white"
+                  className="w-full h-14 px-4 rounded-xl border-2 border-slate-100 dark:border-emerald-800/30 focus:border-neu-green focus:outline-none text-lg bg-white dark:bg-emerald-950/40 text-slate-900 dark:text-emerald-50 transition-colors"
                 >
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
               ) : (
-                <p className="text-xl font-medium text-slate-700 h-14 flex items-center px-4 bg-slate-50 rounded-xl border border-slate-100">
+                <p className="text-xl font-medium text-slate-700 dark:text-emerald-300 h-14 flex items-center px-4 bg-slate-50 dark:bg-emerald-950/20 rounded-xl border border-slate-100 dark:border-emerald-900/20 transition-colors">
                   {userData?.category || 'Not provided'}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <label className="text-xs font-bold text-slate-400 dark:text-emerald-500 uppercase tracking-wider flex items-center gap-2 transition-colors">
                 <Building size={14} /> College / Office
               </label>
               {isEditing ? (
                 <select 
                   value={formData.college}
                   onChange={(e) => setFormData({ ...formData, college: e.target.value as College })}
-                  className="w-full h-14 px-4 rounded-xl border-2 border-slate-100 focus:border-neu-green focus:outline-none text-lg bg-white"
+                  className="w-full h-14 px-4 rounded-xl border-2 border-slate-100 dark:border-emerald-800/30 focus:border-neu-green focus:outline-none text-lg bg-white dark:bg-emerald-950/40 text-slate-900 dark:text-emerald-50 transition-colors"
                 >
                   {colleges.map(col => (
                     <option key={col} value={col}>{col}</option>
                   ))}
                 </select>
               ) : (
-                <p className="text-xl font-medium text-slate-700 h-14 flex items-center px-4 bg-slate-50 rounded-xl border border-slate-100">
+                <p className="text-xl font-medium text-slate-700 dark:text-emerald-300 h-14 flex items-center px-4 bg-slate-50 dark:bg-emerald-950/20 rounded-xl border border-slate-100 dark:border-emerald-900/20 transition-colors">
                   {userData?.college || 'Not provided'}
                 </p>
               )}
@@ -523,7 +545,7 @@ const ProfileSection = ({ user, userData, onBack }: { user: any; userData: AppUs
             <Button 
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full bg-neu-green text-white py-4 text-lg shadow-lg shadow-emerald-100"
+              className="w-full bg-neu-green text-white py-4 text-lg shadow-lg shadow-emerald-100 dark:shadow-none transition-all"
             >
               {isSaving ? 'Saving Changes...' : 'Save Profile Changes'}
             </Button>
@@ -544,10 +566,10 @@ const CategorySelection = ({ onSelect, onBack }: { onSelect: (category: UserCate
       className="max-w-4xl mx-auto space-y-8 py-8"
     >
       <div className="flex items-center gap-4">
-        <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+        <button onClick={onBack} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors dark:text-white">
           <ArrowLeft size={32} />
         </button>
-        <h2 className="text-4xl font-bold">Select your Category</h2>
+        <h2 className="text-4xl font-bold dark:text-white transition-colors">Select your Category</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -555,13 +577,13 @@ const CategorySelection = ({ onSelect, onBack }: { onSelect: (category: UserCate
           <button
             key={cat}
             onClick={() => onSelect(cat)}
-            className="group relative bg-white p-8 rounded-[2rem] border-2 border-slate-100 hover:border-neu-green hover:shadow-2xl hover:shadow-emerald-100 transition-all text-left overflow-hidden"
+            className="group relative bg-white dark:bg-emerald-950/20 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-emerald-800/30 hover:border-neu-green dark:hover:border-emerald-500 hover:shadow-2xl hover:shadow-emerald-100 dark:hover:shadow-none transition-all text-left overflow-hidden"
           >
             <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="text-neu-green" size={32} />
+              <ChevronRight className="text-neu-green dark:text-emerald-400" size={32} />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">{cat}</h3>
-            <p className="text-slate-500">Official {cat} of New Era University</p>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 transition-colors">{cat}</h3>
+            <p className="text-slate-500 dark:text-slate-400 transition-colors">Official {cat} of New Era University</p>
           </button>
         ))}
       </div>
@@ -590,10 +612,10 @@ const CollegeSelection = ({ onSelect, onBack }: { onSelect: (college: College) =
       className="max-w-4xl mx-auto space-y-8 py-8"
     >
       <div className="flex items-center gap-4">
-        <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+        <button onClick={onBack} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors dark:text-white">
           <ArrowLeft size={32} />
         </button>
-        <h2 className="text-4xl font-bold">Select your College / Office</h2>
+        <h2 className="text-4xl font-bold dark:text-white transition-colors">Select your College / Office</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -601,10 +623,10 @@ const CollegeSelection = ({ onSelect, onBack }: { onSelect: (college: College) =
           <button
             key={college}
             onClick={() => onSelect(college)}
-            className="kiosk-button group"
+            className="kiosk-button group dark:bg-emerald-950/20 dark:border-emerald-800/30 dark:hover:border-emerald-500 transition-all"
           >
-            <School size={40} className="mb-4 text-slate-400 group-hover:text-neu-blue transition-colors" />
-            <span className="text-xl font-semibold">{college}</span>
+            <School size={40} className="mb-4 text-slate-400 dark:text-slate-500 group-hover:text-neu-blue dark:group-hover:text-emerald-400 transition-colors" />
+            <span className="text-xl font-semibold dark:text-white transition-colors">{college}</span>
           </button>
         ))}
       </div>
@@ -649,17 +671,17 @@ const ReasonSelection = ({ onSelect, onBack, isSubmitting }: { onSelect: (reason
       className="max-w-4xl mx-auto space-y-8 py-8"
     >
       <div className="flex items-center gap-4">
-        <button onClick={onBack} disabled={isSubmitting} className="p-2 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50">
+        <button onClick={onBack} disabled={isSubmitting} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors disabled:opacity-50 dark:text-white">
           <ArrowLeft size={32} />
         </button>
-        <h2 className="text-4xl font-bold">What is your reason for visiting?</h2>
+        <h2 className="text-4xl font-bold dark:text-white transition-colors">What is your reason for visiting?</h2>
       </div>
 
       {isSubmitting && (
         <div className="flex items-center justify-center py-12">
           <div className="flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-4 border-neu-green border-t-transparent rounded-full animate-spin" />
-            <p className="text-slate-500 font-medium">Recording your visit...</p>
+            <p className="text-slate-500 dark:text-slate-400 font-medium transition-colors">Recording your visit...</p>
           </div>
         </div>
       )}
@@ -670,29 +692,29 @@ const ReasonSelection = ({ onSelect, onBack, isSubmitting }: { onSelect: (reason
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white p-10 rounded-[2.5rem] border-2 border-neu-green shadow-2xl space-y-6"
+              className="bg-white dark:bg-emerald-950/20 p-10 rounded-[2.5rem] border-2 border-neu-green dark:border-emerald-500 shadow-2xl dark:shadow-none space-y-6 transition-colors"
             >
               <div className="space-y-2">
-                <label className="text-xl font-bold text-slate-900">Please specify your reason:</label>
+                <label className="text-xl font-bold text-slate-900 dark:text-white transition-colors">Please specify your reason:</label>
                 <Input 
                   placeholder="Type your reason here..." 
                   value={otherReason}
                   onChange={(e) => setOtherReason(e.target.value)}
                   autoFocus
-                  className="h-16 text-xl"
+                  className="h-16 text-xl bg-white dark:bg-emerald-950/40 border-slate-200 dark:border-emerald-800/30 text-slate-900 dark:text-emerald-50 transition-colors"
                 />
               </div>
               <div className="flex gap-4">
                 <Button 
                   onClick={() => setSelectedReason(null)}
-                  className="flex-1 bg-slate-100 text-slate-600 py-4"
+                  className="flex-1 bg-slate-100 dark:bg-emerald-900/40 text-slate-600 dark:text-emerald-400 py-4 hover:bg-slate-200 dark:hover:bg-emerald-800/60 transition-all"
                 >
                   Back to List
                 </Button>
                 <Button 
                   onClick={handleSubmitOther}
                   disabled={!otherReason.trim()}
-                  className="flex-2 bg-neu-green text-white py-4"
+                  className="flex-2 bg-neu-green text-white py-4 hover:bg-emerald-700 transition-all"
                 >
                   Confirm Reason
                 </Button>
@@ -704,10 +726,10 @@ const ReasonSelection = ({ onSelect, onBack, isSubmitting }: { onSelect: (reason
                 <button
                   key={reason}
                   onClick={() => handleSelect(reason)}
-                  className="kiosk-button group"
+                  className="kiosk-button group dark:bg-emerald-950/20 dark:border-emerald-800/30 dark:hover:border-emerald-500 transition-all"
                 >
-                  <BookOpen size={40} className="mb-4 text-slate-400 group-hover:text-neu-blue transition-colors" />
-                  <span className="text-xl font-semibold">{reason}</span>
+                  <BookOpen size={40} className="mb-4 text-slate-400 dark:text-slate-500 group-hover:text-neu-blue dark:group-hover:text-emerald-400 transition-colors" />
+                  <span className="text-xl font-semibold dark:text-white transition-colors">{reason}</span>
                 </button>
               ))}
             </div>
@@ -730,16 +752,16 @@ const SuccessScreen = () => {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-          className="w-32 h-32 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-emerald-100"
+          className="w-32 h-32 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-emerald-100 dark:shadow-none"
         >
           <CheckCircle2 size={64} />
         </motion.div>
       </div>
       <div className="space-y-4">
-        <h1 className="text-5xl font-bold text-slate-900">Welcome to NEU Library!</h1>
-        <p className="text-2xl text-slate-500">Your visit has been successfully recorded.</p>
+        <h1 className="text-5xl font-bold text-slate-900 dark:text-white transition-colors">Welcome to NEU Library!</h1>
+        <p className="text-2xl text-slate-500 dark:text-slate-400 transition-colors">Your visit has been successfully recorded.</p>
       </div>
-      <p className="text-slate-400">Resetting in a few seconds...</p>
+      <p className="text-slate-400 dark:text-slate-500 transition-colors">Resetting in a few seconds...</p>
     </motion.div>
   );
 };
@@ -756,128 +778,25 @@ const VerificationPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 dark:bg-[#05120a] p-6 transition-colors">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100 text-center"
+        className="max-w-md w-full bg-white dark:bg-emerald-950/20 p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100 dark:border-emerald-800/30 text-center transition-colors"
       >
-        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6 transition-colors">
           <Mail size={40} />
         </div>
-        <h2 className="text-3xl font-black text-slate-900 mb-4">Verify Your Email</h2>
-        <p className="text-slate-600 mb-8 text-lg">
-          We have sent you a verification email to <span className="font-bold text-slate-900">{email}</span>. Please verify it and log in.
+        <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4 transition-colors">Verify Your Email</h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-8 text-lg transition-colors">
+          We have sent you a verification email to <span className="font-bold text-slate-900 dark:text-white transition-colors">{email}</span>. Please verify it and log in.
         </p>
         <Button 
           onClick={handleLoginRedirect}
-          className="w-full bg-neu-green text-white py-4 text-lg shadow-lg shadow-emerald-100 hover:bg-emerald-700"
+          className="w-full bg-neu-green text-white py-4 text-lg shadow-lg shadow-emerald-100 dark:shadow-none hover:bg-emerald-700 transition-all"
         >
           Login
         </Button>
-      </motion.div>
-    </div>
-  );
-};
-
-const RegisterPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      if (!email.toLowerCase().endsWith('@neu.edu.ph')) {
-        setError("Please use your official @neu.edu.ph account to access the system.");
-        setLoading(false);
-        return;
-      }
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(userCredential.user);
-      await signOut(auth); // Do not sign them in automatically
-      navigate('/verify', { state: { email } });
-    } catch (err: any) {
-      let message = 'Registration failed';
-      if (err.code === 'auth/email-already-in-use') message = 'Email already in use';
-      if (err.code === 'auth/weak-password') message = 'Password is too weak';
-      setError(message);
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 p-6">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100"
-      >
-        <div className="text-center mb-10">
-          <Logo className="w-24 h-24 mx-auto mb-4" />
-          <h2 className="text-3xl font-black text-slate-900">NEU LibTrack</h2>
-          <p className="text-slate-500">Create your account</p>
-        </div>
-
-        <form onSubmit={handleRegister} className="space-y-6">
-          {error && (
-            <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
-              {error}
-            </div>
-          )}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
-            <Input 
-              type="email" 
-              placeholder="your@email.com" 
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="text-base h-14"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
-            <Input 
-              type="password" 
-              placeholder="••••••••" 
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className="text-base h-14"
-            />
-          </div>
-          <Button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-neu-green text-white py-4 text-lg shadow-lg shadow-emerald-100 hover:bg-emerald-700"
-          >
-            {loading ? 'Creating account...' : 'Register'}
-          </Button>
-        </form>
-
-        <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm font-medium">
-            Already have an account?{' '}
-            <button onClick={() => navigate('/login')} className="text-neu-green font-bold hover:underline">
-              Sign In
-            </button>
-          </p>
-        </div>
-
-        <button 
-          onClick={() => navigate('/')}
-          className="w-full mt-6 text-slate-400 hover:text-slate-600 text-sm font-medium flex items-center justify-center gap-2"
-        >
-          <ArrowLeft size={16} />
-          Back to Kiosk
-        </button>
       </motion.div>
     </div>
   );
@@ -930,45 +849,45 @@ const PasswordReauthModal = ({ isOpen, onClose, onConfirm, title, message }: {
             className="modal-content max-w-md"
             onClick={e => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-red-50/50">
-              <div className="flex items-center gap-3 text-red-600">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-red-50/50 dark:bg-red-900/10 transition-colors">
+              <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
                 <Lock size={24} />
                 <h3 className="text-xl font-bold">{title}</h3>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-colors">
+              <button onClick={onClose} className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-full transition-colors">
                 <X size={20} />
               </button>
             </div>
             <div className="p-8 space-y-6">
-              <p className="text-slate-600">{message}</p>
+              <p className="text-slate-600 dark:text-slate-300 transition-colors">{message}</p>
               
               {error && (
-                <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium border border-red-100 dark:border-red-900/30 transition-colors">
                   {error}
                 </div>
               )}
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Admin Password</label>
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">Admin Password</label>
                 <input 
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password to confirm"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/30 bg-white dark:bg-emerald-950/40 text-slate-900 dark:text-emerald-50 focus:border-red-500 focus:outline-none transition-all"
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
                 />
               </div>
             </div>
-            <div className="p-6 border-t border-slate-100 bg-slate-50 flex gap-3">
-              <Button onClick={onClose} className="flex-1 bg-white text-slate-600 border border-slate-200">
+            <div className="p-6 border-t border-slate-100 dark:border-emerald-800/30 bg-slate-50 dark:bg-emerald-950/20 flex gap-3 transition-colors">
+              <Button onClick={onClose} className="flex-1 bg-white dark:bg-emerald-900/40 text-slate-600 dark:text-emerald-300 border border-slate-200 dark:border-emerald-800/30 transition-colors">
                 Cancel
               </Button>
               <Button 
                 onClick={handleConfirm} 
                 disabled={loading || !password}
-                className="flex-1 bg-red-600 text-white shadow-lg shadow-red-100"
+                className="flex-1 bg-red-600 text-white shadow-lg shadow-red-100 dark:shadow-none transition-all"
               >
                 {loading ? 'Verifying...' : 'Confirm Action'}
               </Button>
@@ -983,11 +902,26 @@ const PasswordReauthModal = ({ isOpen, onClose, onConfirm, title, message }: {
 const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
   const { user: adminUser } = useAuth();
   const [isReauthOpen, setIsReauthOpen] = useState(false);
-  const [reauthAction, setReauthAction] = useState<{ type: 'restore' | 'delete', logId: string } | null>(null);
+  const [reauthAction, setReauthAction] = useState<{ type: 'restore' | 'delete' | 'bulk_restore' | 'bulk_delete', logId?: string, selectedLogs?: VisitorLog[] } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const handleActionClick = async (type: 'restore' | 'delete', logId: string) => {
+  const toggleSelectAll = () => {
+    if (selectedIds.length === logs.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(logs.map(l => l.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleActionClick = async (type: 'restore' | 'delete' | 'bulk_restore' | 'bulk_delete', logId?: string) => {
     if (type === 'restore') {
-      if (!adminUser?.email) return;
+      if (!adminUser?.email || !logId) return;
       const loadingToast = toast.loading("Restoring log...");
       try {
         await restoreLog(logId, adminUser.email);
@@ -996,6 +930,23 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
         console.error("Restore error:", error);
         toast.error("Failed to restore log.", { id: loadingToast });
       }
+    } else if (type === 'bulk_restore') {
+      if (!adminUser?.email || selectedIds.length === 0) return;
+      const loadingToast = toast.loading(`Restoring ${selectedIds.length} logs...`);
+      try {
+        const logsToRestore = logs.filter(l => selectedIds.includes(l.id));
+        await bulkRestoreLogs(adminUser.email, logsToRestore);
+        setSelectedIds([]);
+        toast.success("Logs restored successfully.", { id: loadingToast });
+      } catch (error) {
+        console.error("Bulk restore error:", error);
+        toast.error("Failed to restore logs.", { id: loadingToast });
+      }
+    } else if (type === 'bulk_delete') {
+      if (selectedIds.length === 0) return;
+      const selectedLogs = logs.filter(l => selectedIds.includes(l.id));
+      setReauthAction({ type, selectedLogs });
+      setIsReauthOpen(true);
     } else {
       setReauthAction({ type, logId });
       setIsReauthOpen(true);
@@ -1005,7 +956,11 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
   const handleConfirmAction = async (password: string) => {
     if (!reauthAction || !adminUser?.email) return;
 
-    const loadingToast = toast.loading(reauthAction.type === 'delete' ? "Permanently deleting..." : "Restoring...");
+    const isBulk = reauthAction.type.startsWith('bulk_');
+    const loadingToast = toast.loading(
+      reauthAction.type.includes('delete') ? "Permanently deleting..." : "Restoring..."
+    );
+
     try {
       // Check if user is Google user
       const isGoogleUser = auth.currentUser?.providerData.some(p => p.providerId === 'google.com');
@@ -1016,9 +971,13 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
         await reauthenticateWithCredential(auth.currentUser!, credential);
       }
 
-      if (reauthAction.type === 'delete') {
+      if (reauthAction.type === 'delete' && reauthAction.logId) {
         await permanentDeleteLog(reauthAction.logId, adminUser.email);
         toast.success("Log permanently deleted.", { id: loadingToast });
+      } else if (reauthAction.type === 'bulk_delete' && reauthAction.selectedLogs) {
+        await bulkPermanentDeleteLogs(adminUser.email, reauthAction.selectedLogs);
+        setSelectedIds([]);
+        toast.success(`${reauthAction.selectedLogs.length} logs permanently deleted.`, { id: loadingToast });
       }
       setIsReauthOpen(false);
     } catch (error) {
@@ -1029,71 +988,119 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
 
   return (
     <div className="space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Recycle Bin</h2>
+          <p className="text-slate-500 dark:text-slate-400">Manage deleted visitor logs.</p>
+        </div>
+        
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4">
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400 mr-2">
+              {selectedIds.length} selected
+            </span>
+            <button
+              onClick={() => handleActionClick('bulk_restore')}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-all"
+            >
+              <RefreshCw size={18} />
+              Restore Selected
+            </button>
+            <button
+              onClick={() => handleActionClick('bulk_delete')}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition-all"
+            >
+              <Trash2 size={18} />
+              Delete Permanently
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="overflow-x-auto admin-card">
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-slate-100">
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Visitor</th>
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">College</th>
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Reason</th>
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Original Date</th>
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Deleted Info</th>
-              <th className="pb-4"></th>
+            <tr className="border-b border-slate-100 dark:border-slate-800 transition-colors">
+              <th className="pb-4 pl-4">
+                <input 
+                  type="checkbox" 
+                  checked={logs.length > 0 && selectedIds.length === logs.length}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 rounded border-slate-300 text-neu-green focus:ring-neu-green"
+                />
+              </th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Visitor</th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">College</th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Reason</th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Original Date</th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Deleted Info</th>
+              <th className="pb-4 pr-4"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-800 transition-colors">
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-20 text-center text-slate-400 font-medium">
+                <td colSpan={7} className="py-20 text-center text-slate-400 dark:text-slate-500 font-medium">
                   Recycle bin is empty.
                 </td>
               </tr>
             ) : (
               logs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                <tr key={log.id} className={cn(
+                  "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors",
+                  selectedIds.includes(log.id) ? "bg-emerald-50/30 dark:bg-emerald-900/10" : ""
+                )}>
+                  <td className="py-4 pl-4">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(log.id)}
+                      onChange={() => toggleSelect(log.id)}
+                      className="w-4 h-4 rounded border-slate-300 text-neu-green focus:ring-neu-green"
+                    />
+                  </td>
                   <td className="py-4">
                     <div className="flex items-center gap-3">
                       {log.photoURL ? (
-                        <img src={log.photoURL} alt="" className="w-10 h-10 rounded-full border border-slate-100" referrerPolicy="no-referrer" />
+                        <img src={log.photoURL} alt="" className="w-10 h-10 rounded-full border border-slate-100 dark:border-slate-700" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-xs">
+                        <div className="w-10 h-10 bg-slate-100 dark:bg-emerald-900/40 text-slate-500 dark:text-emerald-400 rounded-full flex items-center justify-center font-bold text-xs">
                           {log.name.charAt(0)}
                         </div>
                       )}
                       <div>
-                        <p className="font-bold text-slate-900">{log.name}</p>
-                        <p className="text-xs text-slate-500">{log.email}</p>
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase">{log.category}</span>
+                        <p className="font-bold text-slate-900 dark:text-white">{log.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{log.email}</p>
+                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-emerald-900/40 text-slate-500 dark:text-emerald-400 rounded text-[10px] font-bold uppercase">{log.category}</span>
                       </div>
                     </div>
                   </td>
                   <td className="py-4">
-                    <span className="text-sm text-slate-600">{log.college}</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-300">{log.college}</span>
                   </td>
                   <td className="py-4">
-                    <span className="text-sm text-slate-600">{log.reason}</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-300">{log.reason}</span>
                   </td>
                   <td className="py-4">
-                    <p className="text-sm text-slate-900">{format(log.timestamp, 'MMM dd, yyyy')}</p>
+                    <p className="text-sm text-slate-900 dark:text-white">{format(log.timestamp, 'MMM dd, yyyy')}</p>
                   </td>
                   <td className="py-4">
                     <div className="text-xs">
-                      <p className="text-red-600 font-bold">Deleted: {log.deletedAt ? format(log.deletedAt, 'MMM dd, HH:mm') : 'N/A'}</p>
-                      <p className="text-slate-400">By: {log.deletedBy || 'Unknown'}</p>
+                      <p className="text-red-600 dark:text-red-400 font-bold">Deleted: {log.deletedAt ? format(log.deletedAt, 'MMM dd, HH:mm') : 'N/A'}</p>
+                      <p className="text-slate-400 dark:text-slate-500">By: {log.deletedBy || 'Unknown'}</p>
                     </div>
                   </td>
-                  <td className="py-4 text-right">
+                  <td className="py-4 pr-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button 
                         onClick={() => handleActionClick('restore', log.id)}
-                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                        className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all"
                         title="Restore Log"
                       >
                         <RefreshCw size={20} />
                       </button>
                       <button 
                         onClick={() => handleActionClick('delete', log.id)}
-                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-2 text-red-400 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                         title="Permanently Delete"
                       >
                         <Trash2 size={20} />
@@ -1111,12 +1118,91 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
         isOpen={isReauthOpen}
         onClose={() => setIsReauthOpen(false)}
         onConfirm={handleConfirmAction}
-        title={reauthAction?.type === 'restore' ? "Restore Record" : "Permanent Deletion"}
-        message={reauthAction?.type === 'restore' 
-          ? "Please enter your password to restore this record to the active logs." 
-          : "This will permanently delete the record from Firestore. This action cannot be undone."}
+        title={reauthAction?.type.includes('restore') ? "Restore Records" : "Permanent Deletion"}
+        message={reauthAction?.type.includes('restore') 
+          ? `Please enter your password to restore ${reauthAction.selectedLogs ? reauthAction.selectedLogs.length : 'this'} record(s) to the active logs.` 
+          : `This will permanently delete ${reauthAction?.selectedLogs ? reauthAction.selectedLogs.length : 'the'} record(s) from Firestore. This action cannot be undone.`}
       />
     </div>
+  );
+};
+
+const BackupDetailsModal = ({ isOpen, onClose, backup }: { isOpen: boolean; onClose: () => void; backup: any }) => {
+  if (!backup) return null;
+  
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="modal-overlay"
+          onClick={onClose}
+        >
+          <motion.div 
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.9, y: 20 }}
+            className="modal-content max-w-4xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-slate-100 dark:border-emerald-800/30 flex justify-between items-center bg-emerald-50/50 dark:bg-emerald-950/20">
+              <div className="flex items-center gap-3 text-neu-green dark:text-emerald-400">
+                <History size={24} />
+                <div>
+                  <h3 className="text-xl font-bold">Backup Snapshot Details</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {backup.backupDate ? format(backup.backupDate, 'MMMM dd, yyyy HH:mm:ss') : 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <button onClick={onClose} className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-full transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-0 overflow-y-auto max-h-[60vh]">
+              <table className="w-full text-left">
+                <thead className="sticky top-0 bg-slate-50 dark:bg-emerald-900/60 z-10">
+                  <tr>
+                    <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Visitor</th>
+                    <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">College</th>
+                    <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Reason</th>
+                    <th className="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {backup.data?.map((log: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="p-4">
+                        <p className="font-bold text-sm text-slate-900 dark:text-slate-100">{log.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{log.email}</p>
+                      </td>
+                      <td className="p-4 text-sm text-slate-600 dark:text-slate-300">{log.college}</td>
+                      <td className="p-4 text-sm text-slate-600 dark:text-slate-300">{log.reason}</td>
+                      <td className="p-4 text-sm text-slate-600 dark:text-slate-300">
+                        {log.timestamp ? (
+                          typeof log.timestamp.toDate === 'function' 
+                            ? format(log.timestamp.toDate(), 'MMM dd, yyyy')
+                            : format(new Date(log.timestamp), 'MMM dd, yyyy')
+                        ) : 'N/A'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="p-6 border-t border-slate-100 dark:border-emerald-800/30 bg-slate-50 dark:bg-emerald-950/20 flex justify-end">
+              <Button onClick={onClose} className="bg-slate-200 dark:bg-emerald-900/40 text-slate-700 dark:text-emerald-300 hover:bg-slate-300 dark:hover:bg-emerald-800/60">
+                Close
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -1126,6 +1212,8 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isReauthOpen, setIsReauthOpen] = useState(false);
   const [selectedBackupId, setSelectedBackupId] = useState<string | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedBackup, setSelectedBackup] = useState<any>(null);
 
   useEffect(() => {
     if (adminUser && role === 'admin') {
@@ -1136,10 +1224,18 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
 
   const handleManualBackup = async () => {
     if (!adminUser?.email) return;
+    
+    // Requirement: Check if there are active logs to backup
+    const activeLogs = logs.filter(l => (l.status || 'active') === 'active');
+    if (activeLogs.length === 0) {
+      toast.error("There are no active visit logs to back up.");
+      return;
+    }
+
     setIsBackingUp(true);
     const loadingToast = toast.loading("Creating system backup...");
     try {
-      await createBackup(logs, adminUser.email, 'manual');
+      await createBackup(activeLogs, adminUser.email, 'manual');
       toast.success("Backup created successfully!", { id: loadingToast });
     } catch (error) {
       console.error("Backup error:", error);
@@ -1151,7 +1247,14 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
 
   const handleRestoreClick = (backupId: string) => {
     setSelectedBackupId(backupId);
+    const backup = backups.find(b => b.id === backupId);
+    setSelectedBackup(backup);
     setIsReauthOpen(true);
+  };
+
+  const handleViewDetails = (backup: any) => {
+    setSelectedBackup(backup);
+    setIsDetailsOpen(true);
   };
 
   const handleConfirmRestore = async (password: string) => {
@@ -1176,20 +1279,21 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
     } finally {
       setIsBackingUp(false);
       setSelectedBackupId(null);
+      setSelectedBackup(null);
     }
   };
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center transition-colors">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">System Backups</h2>
-          <p className="text-slate-500">Manage and view historical data snapshots.</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">System Backups</h2>
+          <p className="text-slate-500 dark:text-slate-400">Manage and view historical data snapshots.</p>
         </div>
         <Button 
           onClick={handleManualBackup}
           disabled={isBackingUp}
-          className="bg-neu-green text-white flex items-center gap-2 shadow-lg shadow-emerald-100"
+          className="bg-neu-green dark:bg-emerald-600 text-white flex items-center gap-2 shadow-lg shadow-emerald-100 dark:shadow-none transition-all hover:bg-emerald-700 dark:hover:bg-emerald-500"
         >
           <Database size={20} />
           {isBackingUp ? 'Creating Backup...' : 'Create Manual Backup'}
@@ -1198,44 +1302,47 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {backups.map((backup) => (
-          <div key={backup.id} className="admin-card space-y-4">
+          <div key={backup.id} className="admin-card space-y-4 transition-colors group">
             <div className="flex justify-between items-start">
-              <div className="p-3 bg-emerald-50 text-neu-green rounded-xl">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 text-neu-green dark:text-emerald-400 rounded-xl transition-colors">
                 <History size={24} />
               </div>
-              <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded-lg uppercase">
+              <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 dark:bg-emerald-900/40 text-slate-500 dark:text-emerald-400 rounded-lg uppercase transition-colors">
                 {backup.recordCount} Records
               </span>
             </div>
             <div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Backup Date</p>
-              <h4 className="text-lg font-bold text-slate-900">
+              <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Backup Date</p>
+              <h4 className="text-lg font-bold text-slate-900 dark:text-white">
                 {backup.backupDate ? format(backup.backupDate, 'MMMM dd, yyyy') : 'Processing...'}
               </h4>
               <div className="flex items-center justify-between mt-1">
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-slate-400 dark:text-slate-500">
                   {backup.backupDate ? format(backup.backupDate, 'HH:mm:ss') : ''}
                 </p>
                 <span className={cn(
-                  "text-[10px] font-bold px-2 py-0.5 rounded uppercase",
-                  backup.type === 'auto' ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"
+                  "text-[10px] font-bold px-2 py-0.5 rounded uppercase transition-colors",
+                  backup.type === 'auto' ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" : "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
                 )}>
                   {backup.type || 'manual'}
                 </span>
               </div>
             </div>
-            <div className="text-xs text-slate-400 flex items-center gap-1">
+            <div className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
               <User size={12} />
               <span>By: {backup.triggeredBy || 'System'}</span>
             </div>
-            <div className="pt-4 border-t border-slate-100 flex gap-2">
-              <button className="flex-1 py-2 text-xs font-bold text-slate-500 hover:text-neu-green transition-colors">
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2 transition-colors">
+              <button 
+                onClick={() => handleViewDetails(backup)}
+                className="flex-1 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-neu-green dark:hover:text-emerald-400 transition-colors"
+              >
                 View Details
               </button>
               <button 
                 onClick={() => handleRestoreClick(backup.id)}
                 disabled={isBackingUp}
-                className="flex-1 py-2 text-xs font-bold text-neu-green hover:underline disabled:opacity-50"
+                className="flex-1 py-2 text-xs font-bold text-neu-green dark:text-emerald-500 hover:underline disabled:opacity-50"
               >
                 {isBackingUp && selectedBackupId === backup.id ? 'Restoring...' : 'Restore Snapshot'}
               </button>
@@ -1243,25 +1350,52 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
           </div>
         ))}
         {backups.length === 0 && (
-          <div className="col-span-full py-20 text-center bg-white rounded-[2rem] border border-slate-100">
-            <Database size={48} className="mx-auto text-slate-200 mb-4" />
-            <p className="text-slate-400 font-medium">No backups found.</p>
+          <div className="col-span-full py-20 text-center bg-white dark:bg-emerald-950/20 rounded-[2.5rem] border border-slate-100 dark:border-emerald-800/30 transition-colors">
+            <Database size={48} className="mx-auto text-slate-200 dark:text-slate-700 mb-4 transition-colors" />
+            <p className="text-slate-400 dark:text-slate-500 font-medium transition-colors">No backups found.</p>
           </div>
         )}
       </div>
+
+      <BackupDetailsModal 
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        backup={selectedBackup}
+      />
 
       <PasswordReauthModal 
         isOpen={isReauthOpen}
         onClose={() => setIsReauthOpen(false)}
         onConfirm={handleConfirmRestore}
         title="Restore Backup Confirmation"
-        message="This will overwrite or add records to the current logs from this backup snapshot. Please verify your admin password."
+        message={selectedBackup ? (
+          <div className="space-y-2">
+            <p>This will overwrite or add records to the current logs from this backup snapshot.</p>
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800/60">
+              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase">Snapshot Details:</p>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {selectedBackup.recordCount} records from {selectedBackup.backupDate ? format(selectedBackup.backupDate, 'MMM dd, yyyy HH:mm') : 'N/A'}
+              </p>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 italic">Please verify your admin password to proceed.</p>
+          </div>
+        ) : "Please verify your admin password to proceed."}
       />
     </div>
   );
 };
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ 
+  isCollapsed, 
+  setIsCollapsed, 
+  isMobileOpen, 
+  setIsMobileOpen 
+}: { 
+  isCollapsed: boolean, 
+  setIsCollapsed: (v: boolean) => void,
+  isMobileOpen: boolean,
+  setIsMobileOpen: (v: boolean) => void
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
@@ -1273,7 +1407,6 @@ const AdminSidebar = () => {
     { name: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
     { name: 'Recycle Bin', path: '/admin/recycle-bin', icon: Trash2 },
     { name: 'Backups', path: '/admin/backups', icon: Database },
-    { name: 'Admin Management', path: '/admin/promote', icon: ShieldCheck },
     { name: 'User Guide', path: '/admin/guide', icon: Info },
   ];
 
@@ -1286,85 +1419,156 @@ const AdminSidebar = () => {
     }
   };
 
-  return (
-    <div className="w-64 bg-white border-r border-slate-200 h-screen sticky top-0 flex flex-col">
-      <div className="p-6 border-bottom border-slate-100 flex items-center gap-3">
-        <Logo className="w-8 h-8" />
-        <span className="font-bold text-xl tracking-tight">LibTrack</span>
+  const sidebarContent = (
+    <div className={cn(
+      "bg-white dark:bg-[#05120a] border-r border-slate-200 dark:border-emerald-900/30 h-screen sticky top-0 flex flex-col transition-all duration-300 ease-in-out z-50",
+      isCollapsed ? "w-20" : "w-64"
+    )}>
+      <div className={cn(
+        "p-6 border-b border-slate-100 dark:border-slate-800 flex items-center transition-all",
+        isCollapsed ? "justify-center" : "justify-between"
+      )}>
+        {!isCollapsed && (
+          <div className="flex items-center gap-3 overflow-hidden">
+            <Logo className="w-8 h-8 flex-shrink-0" />
+            <span className="font-bold text-xl tracking-tight dark:text-white whitespace-nowrap">LibTrack</span>
+          </div>
+        )}
+        {isCollapsed && <Logo className="w-8 h-8" />}
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="hidden lg:flex p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+        >
+          {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+        </button>
+        <button 
+          onClick={() => setIsMobileOpen(false)}
+          className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+        >
+          <X size={20} />
+        </button>
       </div>
-      <nav className="flex-1 p-4 space-y-2">
+
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden">
         {links.map((link) => (
           <button
             key={link.path}
-            onClick={() => navigate(link.path)}
+            onClick={() => {
+              navigate(link.path);
+              setIsMobileOpen(false);
+            }}
+            title={isCollapsed ? link.name : ""}
             className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors",
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all group",
               location.pathname === link.path 
-                ? "bg-emerald-50 text-neu-green" 
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                ? "bg-emerald-50 dark:bg-neu-green/10 text-neu-green" 
+                : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
             )}
           >
-            <link.icon size={20} />
-            {link.name}
+            <link.icon size={20} className="flex-shrink-0" />
+            {!isCollapsed && <span className="whitespace-nowrap">{link.name}</span>}
           </button>
         ))}
       </nav>
       
       {/* Profile Section */}
-      <div className="p-4 mx-4 mb-2 bg-slate-50 rounded-2xl flex items-center gap-3 border border-slate-100">
+      <div className={cn(
+        "p-4 mx-4 mb-2 bg-slate-50 dark:bg-emerald-950/20 rounded-2xl flex items-center gap-3 border border-slate-100 dark:border-emerald-800/30 transition-all overflow-hidden",
+        isCollapsed ? "px-2 mx-2 justify-center" : ""
+      )}>
         {user?.photoURL ? (
-          <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border-2 border-white shadow-sm" referrerPolicy="no-referrer" />
+          <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-700 shadow-sm flex-shrink-0" referrerPolicy="no-referrer" />
         ) : (
-          <div className="w-10 h-10 bg-neu-green/10 text-neu-green rounded-full flex items-center justify-center font-bold">
+          <div className="w-10 h-10 bg-neu-green/10 text-neu-green rounded-full flex items-center justify-center font-bold flex-shrink-0">
             {user?.email?.charAt(0).toUpperCase()}
           </div>
         )}
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-slate-900 truncate">{user?.email?.split('@')[0]}</p>
-          <p className="text-[10px] text-slate-500 truncate">Administrator</p>
-        </div>
+        {!isCollapsed && (
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.email?.split('@')[0]}</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">Administrator</p>
+          </div>
+        )}
       </div>
 
-      <div className="p-4 border-t border-slate-100 space-y-2">
+      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2 transition-colors">
         <button 
           onClick={() => navigate('/')}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+          title={isCollapsed ? "Exit Admin" : ""}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all",
+            isCollapsed ? "justify-center" : ""
+          )}
         >
-          <ArrowLeft size={20} />
-          Exit Admin
+          <ArrowLeft size={20} className="flex-shrink-0" />
+          {!isCollapsed && <span>Exit Admin</span>}
         </button>
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+          title={isCollapsed ? "Logout" : ""}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-all",
+            isCollapsed ? "justify-center" : ""
+          )}
         >
-          <X size={20} />
-          Sign Out
+          <LogOut size={20} className="flex-shrink-0" />
+          {!isCollapsed && <span>Logout</span>}
         </button>
       </div>
     </div>
   );
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileOpen(false)}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Sidebar */}
+      <div className={cn(
+        "fixed inset-y-0 left-0 z-50 lg:hidden transition-transform duration-300 ease-in-out transform",
+        isMobileOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        {sidebarContent}
+      </div>
+
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        {sidebarContent}
+      </div>
+    </>
+  );
 };
 
 const StatCard = ({ title, value, icon: Icon, trend, color = "emerald" }: { title: string; value: string | number; icon: any; trend?: string; color?: string }) => (
-  <div className="admin-card">
+  <div className="admin-card transition-colors">
     <div className="flex justify-between items-start mb-4">
       <div className={cn(
-        "p-3 rounded-xl",
-        color === "emerald" ? "bg-emerald-50 text-neu-green" : 
-        color === "blue" ? "bg-blue-50 text-blue-600" :
-        color === "amber" ? "bg-amber-50 text-amber-600" :
-        "bg-slate-50 text-slate-600"
+        "p-3 rounded-xl transition-colors",
+        color === "emerald" ? "bg-emerald-50 dark:bg-neu-green/10 text-neu-green" : 
+        color === "blue" ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" :
+        color === "amber" ? "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400" :
+        "bg-slate-50 dark:bg-emerald-900/40 text-slate-600 dark:text-emerald-400"
       )}>
         <Icon size={24} />
       </div>
       {trend && (
-        <span className="text-xs font-bold px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg">
+        <span className="text-xs font-bold px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg">
           {trend}
         </span>
       )}
     </div>
-    <p className="text-slate-500 text-sm font-medium">{title}</p>
-    <h3 className="text-3xl font-bold mt-1">{value}</h3>
+    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{title}</p>
+    <h3 className="text-3xl font-bold mt-1 dark:text-white">{value}</h3>
   </div>
 );
 
@@ -1398,7 +1602,7 @@ const ExportButton = ({ data, filename }: { data: any[], filename: string }) => 
   };
 
   return (
-    <Button onClick={handleExport} className="flex items-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">
+    <Button onClick={handleExport} className="flex items-center gap-2 bg-white dark:bg-emerald-900/40 text-slate-700 dark:text-emerald-300 border border-slate-200 dark:border-emerald-800/30 hover:bg-slate-50 dark:hover:bg-emerald-800/60 transition-all">
       <Download size={18} />
       Export CSV
     </Button>
@@ -1449,14 +1653,14 @@ const AdminUserSearch = ({ users }: { users: AppUser[] }) => {
             placeholder="Search users by name or email..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-neu-green focus:outline-none transition-all"
+            className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-neu-green focus:outline-none transition-all"
           />
         </div>
         <div className="flex gap-2">
           <select 
             value={collegeFilter}
             onChange={(e) => setCollegeFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none text-sm"
+            className="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none text-sm transition-colors"
           >
             <option value="All">All Colleges</option>
             <option value="College of Engineering">Engineering</option>
@@ -1469,7 +1673,7 @@ const AdminUserSearch = ({ users }: { users: AppUser[] }) => {
           <select 
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none text-sm"
+            className="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none text-sm transition-colors"
           >
             <option value="All">All Categories</option>
             <option value="Student">Student</option>
@@ -1483,28 +1687,28 @@ const AdminUserSearch = ({ users }: { users: AppUser[] }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredUsers.map(u => (
-          <div key={u.uid} className="admin-card flex items-center gap-4 hover:border-neu-green transition-colors cursor-pointer group">
+          <div key={u.uid} className="admin-card flex items-center gap-4 hover:border-neu-green dark:hover:border-neu-green transition-colors cursor-pointer group">
             {u.photoURL ? (
-              <img src={u.photoURL} alt="" className="w-12 h-12 rounded-full border border-slate-100" referrerPolicy="no-referrer" />
+              <img src={u.photoURL} alt="" className="w-12 h-12 rounded-full border border-slate-100 dark:border-slate-700 transition-colors" referrerPolicy="no-referrer" />
             ) : (
-              <div className="w-12 h-12 bg-emerald-100 text-neu-green rounded-full flex items-center justify-center font-bold text-xl group-hover:bg-neu-green group-hover:text-white transition-colors">
+              <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 text-neu-green rounded-full flex items-center justify-center font-bold text-xl group-hover:bg-neu-green group-hover:text-white transition-colors">
                 {u.name?.charAt(0) || u.email.charAt(0).toUpperCase()}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-slate-900 truncate">{u.name || 'No Name'}</h4>
-              <p className="text-xs text-slate-500 truncate">{u.email}</p>
+              <h4 className="font-bold text-slate-900 dark:text-white truncate transition-colors">{u.name || 'No Name'}</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate transition-colors">{u.email}</p>
               <div className="flex gap-2 mt-2">
-                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase">{u.category || 'N/A'}</span>
-                <span className="px-2 py-0.5 bg-emerald-50 text-neu-green rounded text-[10px] font-bold uppercase truncate max-w-[100px]">{u.college || 'N/A'}</span>
+                <span className="px-2 py-0.5 bg-slate-100 dark:bg-emerald-900/40 text-slate-600 dark:text-emerald-300 rounded text-[10px] font-bold uppercase transition-colors">{u.category || 'N/A'}</span>
+                <span className="px-2 py-0.5 bg-emerald-50 dark:bg-neu-green/10 text-neu-green rounded text-[10px] font-bold uppercase truncate max-w-[100px] transition-colors">{u.college || 'N/A'}</span>
               </div>
             </div>
           </div>
         ))}
       </div>
       {filteredUsers.length === 0 && (
-        <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-100">
-          <p className="text-slate-400 font-medium">No users found matching your criteria.</p>
+        <div className="text-center py-20 bg-white dark:bg-emerald-950/20 rounded-[2.5rem] border border-slate-100 dark:border-emerald-800/30 transition-colors">
+          <p className="text-slate-400 dark:text-slate-500 font-medium">No users found matching your criteria.</p>
         </div>
       )}
     </div>
@@ -1531,10 +1735,10 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse p-8">
-        <div className="h-12 bg-slate-100 rounded-xl" />
+        <div className="h-12 bg-slate-100 dark:bg-emerald-900/40 rounded-xl" />
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="h-16 bg-slate-50 rounded-xl" />
+            <div key={i} className="h-16 bg-slate-50 dark:bg-emerald-950/20 rounded-xl" />
           ))}
         </div>
       </div>
@@ -1699,7 +1903,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
               placeholder="Search by name or email..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-neu-green focus:outline-none transition-all"
+              className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-neu-green focus:outline-none transition-all"
             />
           </div>
           <div className="flex gap-2">
@@ -1709,7 +1913,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
                 <Button 
                   onClick={handleBulkDeleteClick}
                   disabled={isBulkDeleting || selectedLogIds.length === 0}
-                  className="bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100 px-4 py-3 text-sm"
+                  className="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 px-4 py-3 text-sm transition-colors"
                 >
                   <Trash2 size={18} className="mr-2" />
                   {isBulkDeleting ? 'Deleting...' : `Delete Selected (${selectedLogIds.length})`}
@@ -1717,7 +1921,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
                 <Button 
                   onClick={handleClearAllClick}
                   disabled={isDeletingAll || filteredLogs.length === 0}
-                  className="bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 px-4 py-3 text-sm"
+                  className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 px-4 py-3 text-sm transition-colors"
                 >
                   <Trash2 size={18} className="mr-2" />
                   {isDeletingAll ? 'Clearing...' : (dateRange.start || dateRange.end ? 'Clear Filtered' : 'Clear All')}
@@ -1727,7 +1931,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
             <select 
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as any)}
-              className="px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none text-sm"
+              className="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none text-sm transition-colors"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -1741,7 +1945,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
             <select 
               value={collegeFilter}
               onChange={(e) => setCollegeFilter(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none text-sm"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none text-sm transition-colors"
             >
               <option value="All">All Colleges</option>
               <option value="College of Engineering">Engineering</option>
@@ -1757,7 +1961,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
             <select 
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none text-sm"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none text-sm transition-colors"
             >
               <option value="All">All Categories</option>
               <option value="Student">Student</option>
@@ -1772,7 +1976,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
               type="date"
               value={dateRange.start}
               onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none text-sm"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none text-sm transition-colors"
             />
           </div>
           <div className="space-y-1">
@@ -1781,7 +1985,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
               type="date"
               value={dateRange.end}
               onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none text-sm"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none text-sm transition-colors"
             />
           </div>
         </div>
@@ -1790,64 +1994,64 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-slate-100">
+            <tr className="border-b border-slate-100 dark:border-slate-800 transition-colors">
               <th className="pb-4 w-10">
                 <input 
                   type="checkbox" 
                   checked={filteredLogs.length > 0 && selectedLogIds.length === filteredLogs.length}
                   onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-slate-300 text-neu-green focus:ring-neu-green"
+                  className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-neu-green focus:ring-neu-green bg-white dark:bg-slate-800 transition-colors"
                 />
               </th>
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Visitor</th>
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Category</th>
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">College</th>
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Reason</th>
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Date & Time</th>
-              <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Status</th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Visitor</th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Category</th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">College</th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Reason</th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Date & Time</th>
+              <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Status</th>
               <th className="pb-4"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-800 transition-colors">
             {paginatedLogs.map((log) => {
               const isBlocked = blockedEmails.includes(log.email);
               const isSelected = selectedLogIds.includes(log.id);
               return (
-                <tr key={log.id} className={cn("group hover:bg-slate-50/50 transition-colors", isBlocked && "bg-red-50/30", isSelected && "bg-emerald-50/30")}>
+                <tr key={log.id} className={cn("group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors", isBlocked && "bg-red-50/30 dark:bg-red-900/10", isSelected && "bg-emerald-50/30 dark:bg-neu-green/10")}>
                   <td className="py-4">
                     <input 
                       type="checkbox" 
                       checked={isSelected}
                       onChange={() => toggleSelectLog(log.id)}
-                      className="w-4 h-4 rounded border-slate-300 text-neu-green focus:ring-neu-green"
+                      className="w-4 h-4 rounded border-slate-300 dark:border-emerald-800/30 text-neu-green focus:ring-neu-green bg-white dark:bg-emerald-950/40 transition-colors"
                     />
                   </td>
                   <td className="py-4">
                     <div className="flex items-center gap-3">
                       {log.photoURL ? (
-                        <img src={log.photoURL} alt="" className="w-10 h-10 rounded-full border border-slate-100" referrerPolicy="no-referrer" />
+                        <img src={log.photoURL} alt="" className="w-10 h-10 rounded-full border border-slate-100 dark:border-slate-700" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="w-10 h-10 bg-emerald-100 text-neu-green rounded-full flex items-center justify-center font-bold text-xs">
+                        <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 text-neu-green rounded-full flex items-center justify-center font-bold text-xs">
                           {log.name.charAt(0)}
                         </div>
                       )}
                       <div>
-                        <p className="font-bold text-slate-900">{log.name}</p>
-                        <p className="text-xs text-slate-500">{log.email}</p>
+                        <p className="font-bold text-slate-900 dark:text-white">{log.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{log.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="py-4">
-                    <span className="px-2 py-1 bg-emerald-50 text-neu-green rounded-lg text-[10px] font-black uppercase tracking-wider">
+                    <span className="px-2 py-1 bg-emerald-50 dark:bg-neu-green/10 text-neu-green rounded-lg text-[10px] font-black uppercase tracking-wider">
                       {log.category}
                     </span>
                   </td>
                   <td className="py-4">
-                    <span className="text-sm text-slate-600">{log.college}</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-300">{log.college}</span>
                   </td>
                   <td className="py-4">
                     <div className="flex flex-col gap-1">
-                      <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold w-fit">
+                      <span className="px-3 py-1 bg-slate-100 dark:bg-emerald-900/40 text-slate-600 dark:text-emerald-300 rounded-full text-xs font-bold w-fit">
                         {log.reason}
                       </span>
                       {log.otherReason && (
@@ -1857,18 +2061,18 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
                   </td>
                   <td className="py-4">
                     <div className="text-sm">
-                      <p className="text-slate-900">{format(log.timestamp, 'MMM dd, yyyy')}</p>
-                      <p className="text-slate-400">{format(log.timestamp, 'HH:mm')}</p>
+                      <p className="text-slate-900 dark:text-white">{format(log.timestamp, 'MMM dd, yyyy')}</p>
+                      <p className="text-slate-400 dark:text-slate-500">{format(log.timestamp, 'HH:mm')}</p>
                     </div>
                   </td>
                   <td className="py-4">
                     {isBlocked ? (
-                      <span className="flex items-center gap-1 text-red-600 text-xs font-bold">
+                      <span className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs font-bold">
                         <Ban size={14} />
                         Blocked
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-emerald-600 text-xs font-bold">
+                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
                         <CheckCircle2 size={14} />
                         Active
                       </span>
@@ -1881,8 +2085,8 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
                         className={cn(
                           "p-2 rounded-lg transition-all",
                           isBlocked 
-                            ? "text-emerald-600 hover:bg-emerald-50" 
-                            : "text-red-400 hover:text-red-600 hover:bg-red-50"
+                            ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
+                            : "text-red-400 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
                         )}
                         title={isBlocked ? "Unblock User" : "Block User"}
                       >
@@ -1890,7 +2094,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
                       </button>
                       <button 
                         onClick={() => navigate(`/admin/user/${log.id}`)}
-                        className="p-2 text-slate-400 hover:text-neu-green hover:bg-emerald-50 rounded-lg transition-all"
+                        className="p-2 text-slate-400 dark:text-slate-500 hover:text-neu-green dark:hover:text-neu-green hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all"
                         title="View Details"
                       >
                         <ChevronRight size={20} />
@@ -1900,16 +2104,23 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
                 </tr>
               );
             })}
+            {paginatedLogs.length === 0 && (
+              <tr>
+                <td colSpan={8} className="py-20 text-center">
+                  <p className="text-slate-400 dark:text-slate-500 font-medium">No visitor logs found matching your criteria.</p>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      <div className="mt-8 flex justify-between items-center">
-        <p className="text-sm text-slate-500">Showing {paginatedLogs.length} of {filteredLogs.length} entries</p>
+      <div className="mt-8 flex justify-between items-center transition-colors">
+        <p className="text-sm text-slate-500 dark:text-slate-400">Showing {paginatedLogs.length} of {filteredLogs.length} entries</p>
         <div className="flex gap-2">
           <button 
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            className="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50" 
+            className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 transition-colors" 
             disabled={currentPage === 1}
           >
             Previous
@@ -1919,7 +2130,7 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
           </div>
           <button 
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            className="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50" 
+            className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 transition-colors" 
             disabled={currentPage === totalPages || totalPages === 0}
           >
             Next
@@ -1945,8 +2156,6 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
 // This is now handled by AuthContext and Firestore
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -1962,35 +2171,6 @@ const LoginPage = () => {
     }
   }, [user, navigate]);
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // Domain restriction check
-      if (userCredential.user.email && !userCredential.user.email.toLowerCase().endsWith('@neu.edu.ph')) {
-        await signOut(auth);
-        alert("Please use your official @neu.edu.ph account to access the system.");
-        setError("Unauthorized domain. Use @neu.edu.ph");
-        setLoading(false);
-        return;
-      }
-
-      if (!userCredential.user.emailVerified) {
-        navigate('/verify');
-        return;
-      }
-      // Redirection is now handled by AppContent based on role
-    } catch (err: any) {
-      setError('Email or password is incorrect');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleGoogleSignIn = async () => {
     setError('');
     setLoading(true);
@@ -2000,7 +2180,10 @@ const LoginPage = () => {
       // Domain restriction check
       if (userCredential.user.email && !userCredential.user.email.toLowerCase().endsWith('@neu.edu.ph')) {
         await signOut(auth);
-        alert("Please use your official @neu.edu.ph account to access the system.");
+        toast.error("Please use your official @neu.edu.ph account to access the system.", {
+          duration: 5000,
+          icon: '🚫',
+        });
         setError("Unauthorized domain. Use @neu.edu.ph");
         setLoading(false);
         return;
@@ -2012,97 +2195,51 @@ const LoginPage = () => {
       }
       // Redirection is now handled by AppContent based on role
     } catch (err: any) {
-      setError('Google Sign-In failed. Please try again.');
-      console.error(err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        // User closed the popup, don't show a scary error
+        setError('Sign-in was cancelled. Please try again.');
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        // Multiple popup requests, ignore
+        return;
+      } else {
+        setError('Google Sign-In failed. Please try again.');
+        console.error(err);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 dark:bg-[#05120a] p-6 transition-colors">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100"
+        className="max-w-md w-full bg-white dark:bg-emerald-950/20 p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100 dark:border-emerald-800/40 backdrop-blur-md transition-colors"
       >
         <div className="text-center mb-10">
           <Logo className="w-24 h-24 mx-auto mb-4" />
-          <h2 className="text-3xl font-black text-slate-900">NEU LibTrack</h2>
-          <p className="text-slate-500">Access the Library System</p>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white">NEU LibTrack</h2>
+          <p className="text-slate-500 dark:text-slate-400">Access the Library System</p>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-6">
-          {error && (
-            <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
-              {error}
-            </div>
-          )}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
-            <Input 
-              type="email" 
-              placeholder="admin@neu.edu.ph" 
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="text-base h-14"
-            />
+        {error && (
+          <div className="p-4 mb-6 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium border border-red-100 dark:border-red-900/30 transition-colors">
+            {error}
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
-            <Input 
-              type="password" 
-              placeholder="••••••••" 
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className="text-base h-14"
-            />
-          </div>
-          <Button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-neu-green text-white py-4 text-lg shadow-lg shadow-emerald-100 hover:bg-emerald-700"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </form>
-
-        <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm font-medium">
-            Don't have an account?{' '}
-            <button onClick={() => navigate('/register')} className="text-neu-green font-bold hover:underline">
-              Register
-            </button>
-          </p>
-        </div>
+        )}
         
-        <div className="mt-6 flex flex-col gap-4">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">Or continue with</span>
-            </div>
-          </div>
-
+        <div className="flex flex-col gap-4">
           <button 
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border-2 border-slate-200 font-semibold hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 px-6 py-6 rounded-2xl border-2 border-slate-200 dark:border-emerald-800/30 bg-white dark:bg-emerald-950/20 text-slate-700 dark:text-emerald-50 font-bold text-lg hover:bg-slate-50 dark:hover:bg-emerald-900/40 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-slate-100 dark:shadow-none dark:backdrop-blur-sm"
           >
-            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" referrerPolicy="no-referrer" />
+            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-6 h-6" referrerPolicy="no-referrer" />
             Sign in with Google
           </button>
         </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm font-medium">
-            Login using your NEU credentials
-          </p>
-        </div>
       </motion.div>
     </div>
   );
@@ -2145,6 +2282,7 @@ const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode, 
 };
 
 const DashboardAnalytics = ({ logs, loading }: { logs: VisitorLog[], loading?: boolean }) => {
+  const { theme } = useTheme();
   const [timeFilter, setTimeFilter] = useState<'today' | 'weekly' | 'monthly' | 'custom'>('today');
   const [customRange, setCustomRange] = useState({ start: '', end: '' });
   const { user: adminUser } = useAuth();
@@ -2153,16 +2291,16 @@ const DashboardAnalytics = ({ logs, loading }: { logs: VisitorLog[], loading?: b
     return (
       <div className="space-y-8 animate-pulse">
         <div className="flex justify-between items-center">
-          <div className="h-10 w-64 bg-slate-200 rounded-xl" />
+          <div className="h-10 w-64 bg-slate-200 dark:bg-emerald-900/40 rounded-xl" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-32 bg-slate-200 rounded-[2rem]" />
+            <div key={i} className="h-32 bg-slate-200 dark:bg-emerald-900/40 rounded-[2rem]" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="h-96 bg-slate-200 rounded-[2rem]" />
-          <div className="h-96 bg-slate-200 rounded-[2rem]" />
+          <div className="h-96 bg-slate-200 dark:bg-emerald-900/40 rounded-[2rem]" />
+          <div className="h-96 bg-slate-200 dark:bg-emerald-900/40 rounded-[2rem]" />
         </div>
       </div>
     );
@@ -2254,39 +2392,39 @@ const DashboardAnalytics = ({ logs, loading }: { logs: VisitorLog[], loading?: b
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-colors">
+        <div className="flex bg-white dark:bg-emerald-950/20 p-1 rounded-xl border border-slate-200 dark:border-emerald-800/30 shadow-sm transition-colors">
           <button 
             onClick={() => setTimeFilter('today')}
-            className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", timeFilter === 'today' ? "bg-neu-green text-white" : "text-slate-500 hover:bg-slate-50")}
+            className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", timeFilter === 'today' ? "bg-neu-green text-white" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800")}
           >
             Today
           </button>
           <button 
             onClick={() => setTimeFilter('weekly')}
-            className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", timeFilter === 'weekly' ? "bg-neu-green text-white" : "text-slate-500 hover:bg-slate-50")}
+            className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", timeFilter === 'weekly' ? "bg-neu-green text-white" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800")}
           >
             Weekly
           </button>
           <button 
             onClick={() => setTimeFilter('monthly')}
-            className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", timeFilter === 'monthly' ? "bg-neu-green text-white" : "text-slate-500 hover:bg-slate-50")}
+            className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", timeFilter === 'monthly' ? "bg-neu-green text-white" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800")}
           >
             Monthly
           </button>
           <button 
             onClick={() => setTimeFilter('custom')}
-            className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", timeFilter === 'custom' ? "bg-neu-green text-white" : "text-slate-500 hover:bg-slate-50")}
+            className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", timeFilter === 'custom' ? "bg-neu-green text-white" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800")}
           >
             Custom
           </button>
         </div>
 
         {timeFilter === 'custom' && (
-          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4">
-            <input type="date" value={customRange.start} onChange={e => setCustomRange({ ...customRange, start: e.target.value })} className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-neu-green focus:outline-none" />
+          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4 transition-colors">
+            <input type="date" value={customRange.start} onChange={e => setCustomRange({ ...customRange, start: e.target.value })} className="px-3 py-2 rounded-lg border border-slate-200 dark:border-emerald-800/30 bg-white dark:bg-emerald-950/40 text-slate-900 dark:text-emerald-50 text-sm focus:border-neu-green focus:outline-none transition-colors" />
             <span className="text-slate-400">to</span>
-            <input type="date" value={customRange.end} onChange={e => setCustomRange({ ...customRange, end: e.target.value })} className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-neu-green focus:outline-none" />
+            <input type="date" value={customRange.end} onChange={e => setCustomRange({ ...customRange, end: e.target.value })} className="px-3 py-2 rounded-lg border border-slate-200 dark:border-emerald-800/30 bg-white dark:bg-emerald-950/40 text-slate-900 dark:text-emerald-50 text-sm focus:border-neu-green focus:outline-none transition-colors" />
           </div>
         )}
       </div>
@@ -2299,42 +2437,42 @@ const DashboardAnalytics = ({ logs, loading }: { logs: VisitorLog[], loading?: b
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="admin-card">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Most Active College</p>
-          <h4 className="text-lg font-bold text-slate-900 truncate">{mostActiveCollege}</h4>
+        <div className="admin-card transition-colors">
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Most Active College</p>
+          <h4 className="text-lg font-bold text-slate-900 dark:text-white truncate">{mostActiveCollege}</h4>
         </div>
-        <div className="admin-card">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Top Visit Reason</p>
-          <h4 className="text-lg font-bold text-slate-900 truncate">{mostFrequentReason}</h4>
+        <div className="admin-card transition-colors">
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Top Visit Reason</p>
+          <h4 className="text-lg font-bold text-slate-900 dark:text-white truncate">{mostFrequentReason}</h4>
         </div>
-        <div className="admin-card">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Busiest Day</p>
-          <h4 className="text-lg font-bold text-slate-900 truncate">{mostActiveDay}</h4>
+        <div className="admin-card transition-colors">
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Busiest Day</p>
+          <h4 className="text-lg font-bold text-slate-900 dark:text-white truncate">{mostActiveDay}</h4>
         </div>
-        <div className="admin-card">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Peak Visiting Hour</p>
-          <h4 className="text-lg font-bold text-slate-900 truncate">{peakHour}</h4>
+        <div className="admin-card transition-colors">
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Peak Visiting Hour</p>
+          <h4 className="text-lg font-bold text-slate-900 dark:text-white truncate">{peakHour}</h4>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="admin-card">
-          <h3 className="text-lg font-bold mb-6">Visits per Day</h3>
+        <div className="admin-card transition-colors">
+          <h3 className="text-lg font-bold mb-6 dark:text-white">Visits per Day</h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={visitsByDay}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#334155' : '#e2e8f0'} />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b' }} />
+                <Tooltip cursor={{ fill: theme === 'dark' ? '#1e293b' : '#f1f5f9' }} contentStyle={{ backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff', borderRadius: '12px', border: theme === 'dark' ? '1px solid #334155' : 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', color: theme === 'dark' ? '#ffffff' : '#000000' }} />
                 <Bar dataKey="count" fill="#008C45" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="admin-card">
-          <h3 className="text-lg font-bold mb-6">Visits by College</h3>
+        <div className="admin-card transition-colors">
+          <h3 className="text-lg font-bold mb-6 dark:text-white">Visits by College</h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -2343,14 +2481,14 @@ const DashboardAnalytics = ({ logs, loading }: { logs: VisitorLog[], loading?: b
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={{ backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff', borderRadius: '12px', border: theme === 'dark' ? '1px solid #334155' : 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', color: theme === 'dark' ? '#ffffff' : '#000000' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="admin-card">
-          <h3 className="text-lg font-bold mb-6">Visits by Category</h3>
+        <div className="admin-card transition-colors">
+          <h3 className="text-lg font-bold mb-6 dark:text-white">Visits by Category</h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -2359,158 +2497,26 @@ const DashboardAnalytics = ({ logs, loading }: { logs: VisitorLog[], loading?: b
                     <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={{ backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff', borderRadius: '12px', border: theme === 'dark' ? '1px solid #334155' : 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', color: theme === 'dark' ? '#ffffff' : '#000000' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="admin-card">
-          <h3 className="text-lg font-bold mb-6">Visitor Tracking Insights</h3>
+        <div className="admin-card transition-colors">
+          <h3 className="text-lg font-bold mb-6 dark:text-white">Visitor Tracking Insights</h3>
           <div className="space-y-4">
-            <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+            <div className="p-4 bg-emerald-50 dark:bg-neu-green/10 rounded-xl border border-emerald-100 dark:border-neu-green/20 transition-colors">
               <p className="text-xs font-bold text-neu-green uppercase mb-2">Top Visiting College</p>
-              <p className="text-xl font-bold text-slate-900">{mostActiveCollege}</p>
-              <p className="text-sm text-slate-500 mt-1">{collegeCounts[mostActiveCollege] || 0} total visits in this period.</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-white">{mostActiveCollege}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{collegeCounts[mostActiveCollege] || 0} total visits in this period.</p>
             </div>
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <p className="text-xs font-bold text-blue-600 uppercase mb-2">Most Common Reason</p>
-              <p className="text-xl font-bold text-slate-900">{mostFrequentReason}</p>
-              <p className="text-sm text-slate-500 mt-1">{reasonCounts[mostFrequentReason] || 0} users visited for this reason.</p>
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 transition-colors">
+              <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-2">Most Common Reason</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-white">{mostFrequentReason}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{reasonCounts[mostFrequentReason] || 0} users visited for this reason.</p>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const AdminRolePromotion = ({ users }: { users: AppUser[] }) => {
-  const { user: adminUser } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  const filteredUsers = users.filter(u => 
-    u.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (u.name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-  );
-
-  const handlePromote = async (uid: string, email: string) => {
-    if (!adminUser?.email) return;
-    if (window.confirm(`Are you sure you want to promote ${email} to Admin?`)) {
-      setIsUpdating(true);
-      const loadingToast = toast.loading(`Promoting ${email} to Admin...`);
-      try {
-        await promoteUserToAdmin(uid, adminUser.email);
-        toast.success(`${email} is now an Admin.`, { id: loadingToast });
-      } catch (error) {
-        console.error("Promotion error:", error);
-        toast.error("Failed to promote user.", { id: loadingToast });
-      } finally {
-        setIsUpdating(false);
-      }
-    }
-  };
-
-  const handleRoleChange = async (uid: string, email: string, newRole: UserRole) => {
-    if (!adminUser?.email) return;
-    if (window.confirm(`Change role for ${email} to ${newRole}?`)) {
-      setIsUpdating(true);
-      const loadingToast = toast.loading(`Updating role for ${email}...`);
-      try {
-        await updateUserRole(uid, newRole, adminUser.email);
-        toast.success(`Role updated to ${newRole}.`, { id: loadingToast });
-      } catch (error) {
-        console.error("Role update error:", error);
-        toast.error("Failed to update role.", { id: loadingToast });
-      } finally {
-        setIsUpdating(false);
-      }
-    }
-  };
-
-  return (
-    <div className="space-y-8">
-      <div className="admin-card">
-        <h3 className="text-lg font-bold mb-6">Admin Management & Role Control</h3>
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-          <input 
-            type="text" 
-            placeholder="Search users by email or name..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-neu-green focus:outline-none transition-all"
-          />
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-slate-100">
-                <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">User</th>
-                <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Current Role</th>
-                <th className="pb-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="py-8 text-center text-slate-400">No users found.</td>
-                </tr>
-              ) : (
-                filteredUsers.map((u) => (
-                  <tr key={u.uid} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-4">
-                      <div className="flex items-center gap-4">
-                        {u.photoURL ? (
-                          <img src={u.photoURL} alt="" className="w-10 h-10 rounded-full border border-slate-100" referrerPolicy="no-referrer" />
-                        ) : (
-                          <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold">
-                            {u.email.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-bold text-slate-900">{u.name || 'No Name'}</p>
-                          <p className="text-xs text-slate-500">{u.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4">
-                      <span className={cn(
-                        "px-3 py-1 rounded-full text-xs font-bold uppercase",
-                        u.role === 'admin' ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"
-                      )}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="py-4">
-                      <div className="flex items-center gap-2">
-                        <select 
-                          value={u.role}
-                          onChange={(e) => handleRoleChange(u.uid, u.email, e.target.value as UserRole)}
-                          disabled={isUpdating || u.email === adminUser?.email}
-                          className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-neu-green"
-                        >
-                          <option value="student">Student</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                        {u.role !== 'admin' && (
-                          <button 
-                            onClick={() => handlePromote(u.uid, u.email)}
-                            disabled={isUpdating}
-                            className="px-3 py-2 bg-purple-50 text-purple-600 rounded-lg text-xs font-bold hover:bg-purple-100 transition-all disabled:opacity-50"
-                          >
-                            Promote
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
@@ -2567,10 +2573,6 @@ const AdminUserGuide = () => {
 
   const faqs = [
     {
-      q: "How do I promote a user to Admin?",
-      a: "Go to the 'Admin Management' section (accessible from the sidebar), search for the user's email, and click 'Promote to Admin'. Note that the user must already have a registered account."
-    },
-    {
       q: "Why do I need to re-authenticate for some actions?",
       a: "For security reasons, destructive actions like permanent deletion or restoring logs require you to re-verify your identity using your admin password."
     },
@@ -2584,20 +2586,20 @@ const AdminUserGuide = () => {
     <div className="space-y-12 max-w-4xl">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {sections.map((section) => (
-          <div key={section.title} className="admin-card">
+          <div key={section.title} className="admin-card transition-colors">
             <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-emerald-50 text-neu-green rounded-xl">
+              <div className="p-3 bg-emerald-50 dark:bg-neu-green/10 text-neu-green rounded-xl transition-colors">
                 <section.icon size={24} />
               </div>
-              <h3 className="text-xl font-bold text-slate-900">{section.title}</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">{section.title}</h3>
             </div>
-            <p className="text-slate-600 mb-6 text-sm leading-relaxed">{section.content}</p>
+            <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed transition-colors">{section.content}</p>
             <div className="space-y-3">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">How to use:</p>
+              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">How to use:</p>
               <ul className="space-y-2">
                 {section.steps.map((step, i) => (
-                  <li key={i} className="flex gap-3 text-sm text-slate-500">
-                    <span className="flex-shrink-0 w-5 h-5 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-400">
+                  <li key={i} className="flex gap-3 text-sm text-slate-500 dark:text-slate-400 transition-colors">
+                    <span className="flex-shrink-0 w-5 h-5 bg-slate-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-400 dark:text-emerald-700 transition-colors">
                       {i + 1}
                     </span>
                     {step}
@@ -2609,9 +2611,9 @@ const AdminUserGuide = () => {
         ))}
       </div>
 
-      <div className="admin-card bg-slate-900 text-white border-none">
+      <div className="admin-card bg-slate-900 dark:bg-emerald-950/40 text-white border-none transition-colors">
         <div className="flex items-center gap-4 mb-8">
-          <div className="p-3 bg-white/10 text-emerald-400 rounded-xl">
+          <div className="p-3 bg-white/10 dark:bg-emerald-400/10 text-emerald-400 rounded-xl transition-colors">
             <Info size={24} />
           </div>
           <h3 className="text-xl font-bold">Frequently Asked Questions</h3>
@@ -2620,7 +2622,7 @@ const AdminUserGuide = () => {
           {faqs.map((faq, i) => (
             <div key={i} className="space-y-2">
               <p className="font-bold text-emerald-400">Q: {faq.q}</p>
-              <p className="text-slate-400 text-sm leading-relaxed">A: {faq.a}</p>
+              <p className="text-slate-400 dark:text-slate-500 text-sm leading-relaxed transition-colors">A: {faq.a}</p>
             </div>
           ))}
         </div>
@@ -2650,63 +2652,63 @@ const AdminUserDetail = ({
 
   return (
     <div className="space-y-8">
-      <button onClick={() => navigate('/admin/logs')} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-medium">
+      <button onClick={() => navigate('/admin/logs')} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium transition-colors">
         <ArrowLeft size={20} />
         Back to Logs
       </button>
 
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-1/3 space-y-6">
-          <div className="admin-card text-center relative overflow-hidden">
+          <div className="admin-card text-center relative overflow-hidden transition-colors">
             {isBlocked && (
               <div className="absolute top-0 left-0 w-full h-1 bg-red-500" />
             )}
             {log.photoURL ? (
-              <img src={log.photoURL} alt="" className="w-24 h-24 rounded-full border-2 border-white shadow-sm mx-auto mb-4" referrerPolicy="no-referrer" />
+              <img src={log.photoURL} alt="" className="w-24 h-24 rounded-full border-2 border-white dark:border-slate-800 shadow-sm mx-auto mb-4 transition-colors" referrerPolicy="no-referrer" />
             ) : (
-              <div className="w-24 h-24 bg-emerald-100 text-neu-green rounded-full flex items-center justify-center font-bold text-3xl mx-auto mb-4">
+              <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 text-neu-green rounded-full flex items-center justify-center font-bold text-3xl mx-auto mb-4 transition-colors">
                 {log.name.charAt(0)}
               </div>
             )}
-            <h2 className="text-2xl font-bold">{log.name}</h2>
-            <p className="text-slate-500">{log.email}</p>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white transition-colors">{log.name}</h2>
+            <p className="text-slate-500 dark:text-slate-400 transition-colors">{log.email}</p>
             
             <div className="mt-4">
               {isBlocked ? (
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-xs font-bold transition-colors">
                   <Ban size={14} />
                   Blocked
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-xs font-bold transition-colors">
                   <CheckCircle2 size={14} />
                   Active
                 </span>
               )}
             </div>
 
-            <div className="mt-6 pt-6 border-t border-slate-100 text-left space-y-4">
+            <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 text-left space-y-4 transition-colors">
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase">College</p>
-                <p className="font-medium">{log.college}</p>
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase transition-colors">College</p>
+                <p className="font-medium text-slate-900 dark:text-white transition-colors">{log.college}</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase">Total Visits</p>
-                <p className="font-medium">{userLogs.length} Visits</p>
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase transition-colors">Total Visits</p>
+                <p className="font-medium text-slate-900 dark:text-white transition-colors">{userLogs.length} Visits</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase">Last Visit</p>
-                <p className="font-medium">{format(userLogs[0].timestamp, 'MMM dd, yyyy HH:mm')}</p>
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase transition-colors">Last Visit</p>
+                <p className="font-medium text-slate-900 dark:text-white transition-colors">{format(userLogs[0].timestamp, 'MMM dd, yyyy HH:mm')}</p>
               </div>
             </div>
 
             <Button 
               onClick={() => onToggleBlock(log.email)}
               className={cn(
-                "w-full mt-8",
+                "w-full mt-8 transition-all",
                 isBlocked 
-                  ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                  : "bg-red-50 text-red-600 hover:bg-red-100"
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600" 
+                  : "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40"
               )}
             >
               {isBlocked ? "Unblock User" : "Block User"}
@@ -2715,23 +2717,23 @@ const AdminUserDetail = ({
         </div>
 
         <div className="lg:flex-1">
-          <div className="admin-card">
-            <h3 className="text-lg font-bold mb-6">Visit History</h3>
+          <div className="admin-card transition-colors">
+            <h3 className="text-lg font-bold mb-6 dark:text-white transition-colors">Visit History</h3>
             <div className="space-y-4">
               {userLogs.map((ul) => (
-                <div key={ul.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100">
+                <div key={ul.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                    <div className="p-2 bg-slate-50 dark:bg-emerald-950/20 rounded-lg text-slate-400 dark:text-emerald-700 transition-colors">
                       <Clock size={20} />
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900">{ul.reason}</p>
-                      <p className="text-xs text-slate-500">{ul.college}</p>
+                      <p className="font-bold text-slate-900 dark:text-white transition-colors">{ul.reason}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 transition-colors">{ul.college}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-slate-700">{format(ul.timestamp, 'MMM dd, yyyy')}</p>
-                    <p className="text-xs text-slate-400">{format(ul.timestamp, 'HH:mm')}</p>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors">{format(ul.timestamp, 'MMM dd, yyyy')}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 transition-colors">{format(ul.timestamp, 'HH:mm')}</p>
                   </div>
                 </div>
               ))}
@@ -2758,6 +2760,8 @@ function AppContent() {
 
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const handleSoftDelete = async (logId: string) => {
     if (!user?.email) return;
@@ -2959,22 +2963,25 @@ function AppContent() {
 
   if (isInitialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-emerald-50/10">
+      <div className="min-h-screen flex items-center justify-center bg-emerald-50/10 dark:bg-[#05120a]">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-neu-green border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-slate-500 font-medium">Connecting to NEU LibTrack...</p>
+          <p className="text-slate-500 dark:text-emerald-400 font-medium">Connecting to NEU LibTrack...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-emerald-50/30 dark:bg-[#05120a] transition-colors duration-300">
+      <div className="fixed bottom-6 left-6 z-50">
+        <ThemeToggle />
+      </div>
       <Routes>
         {/* Kiosk Routes */}
         <Route path="/" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30">
+            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30 dark:bg-[#05120a]">
               <KioskHome 
                 savedName={userRoleData?.name}
                 userData={userRoleData}
@@ -2997,11 +3004,10 @@ function AppContent() {
           </ProtectedRoute>
         } />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify" element={<VerificationPage />} />
         <Route path="/profile" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#05120a]">
               <ProfileSection 
                 user={user}
                 userData={userRoleData}
@@ -3012,7 +3018,7 @@ function AppContent() {
         } />
         <Route path="/category" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#05120a]">
               <CategorySelection 
                 onBack={() => navigate('/')}
                 onSelect={(category) => {
@@ -3030,7 +3036,7 @@ function AppContent() {
         } />
         <Route path="/college" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#05120a]">
               <CollegeSelection 
                 onBack={() => {
                   if (userRoleData?.category) {
@@ -3049,7 +3055,7 @@ function AppContent() {
         } />
         <Route path="/reason" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#05120a]">
               <ReasonSelection 
                 onBack={() => {
                   if (userRoleData?.college) {
@@ -3070,7 +3076,7 @@ function AppContent() {
         } />
         <Route path="/success" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30">
+            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30 dark:bg-[#05120a]">
               <SuccessScreen />
             </div>
           </ProtectedRoute>
@@ -3079,18 +3085,38 @@ function AppContent() {
         {/* Admin Routes */}
         <Route path="/admin/*" element={
           <ProtectedRoute allowedRole="admin">
-            <div className="flex min-h-screen bg-emerald-50/10">
-              <AdminSidebar />
-              <main className="flex-1 p-8 overflow-auto">
-                <Routes>
-                  <Route path="/" element={
+            <div className="flex min-h-screen bg-emerald-50/10 dark:bg-[#05120a] transition-colors">
+              <AdminSidebar 
+                isCollapsed={isSidebarCollapsed} 
+                setIsCollapsed={setIsSidebarCollapsed}
+                isMobileOpen={isMobileSidebarOpen}
+                setIsMobileOpen={setIsMobileSidebarOpen}
+              />
+              <main className="flex-1 overflow-auto">
+                {/* Mobile Header */}
+                <header className="lg:hidden bg-white dark:bg-[#05120a] border-b border-slate-200 dark:border-emerald-900/30 p-4 sticky top-0 z-30 flex items-center justify-between transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Logo className="w-8 h-8" />
+                    <span className="font-bold text-xl tracking-tight dark:text-white">LibTrack</span>
+                  </div>
+                  <button 
+                    onClick={() => setIsMobileSidebarOpen(true)}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+                  >
+                    <Menu size={24} />
+                  </button>
+                </header>
+
+                <div className="p-4 md:p-8">
+                  <Routes>
+                    <Route path="/" element={
                     <div className="space-y-8">
                       <div className="flex justify-between items-center">
                         <div>
-                          <h1 className="text-3xl font-bold text-slate-900">Dashboard Overview</h1>
-                          <p className="text-slate-500">Real-time analytics and visitor insights.</p>
+                          <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">Dashboard Overview</h1>
+                          <p className="text-slate-500 dark:text-slate-400 transition-colors">Real-time analytics and visitor insights.</p>
                         </div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 bg-white px-4 py-2 rounded-lg border border-slate-200">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-emerald-400 bg-white dark:bg-emerald-950/40 px-4 py-2 rounded-lg border border-slate-200 dark:border-emerald-800/30 transition-colors">
                           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                           <Clock size={16} />
                           Live: {format(currentTime, 'HH:mm:ss')}
@@ -3101,28 +3127,28 @@ function AppContent() {
 
                       <div className="admin-card">
                         <div className="flex justify-between items-center mb-6">
-                          <h3 className="text-lg font-bold">Recent Activity</h3>
-                          <button onClick={() => navigate('/admin/logs')} className="text-neu-green text-sm font-bold hover:underline">View All</button>
+                          <h3 className="text-lg font-bold dark:text-white transition-colors">Recent Activity</h3>
+                          <button onClick={() => navigate('/admin/logs')} className="text-neu-green dark:text-emerald-400 text-sm font-bold hover:underline">View All</button>
                         </div>
                         <div className="space-y-4">
                           {activeLogs.slice(0, 5).map((log) => (
-                            <div key={log.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                            <div key={log.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                               <div className="flex items-center gap-4">
                                 {log.photoURL ? (
-                                  <img src={log.photoURL} alt="" className="w-10 h-10 rounded-full border border-slate-100" referrerPolicy="no-referrer" />
+                                  <img src={log.photoURL} alt="" className="w-10 h-10 rounded-full border border-slate-100 dark:border-slate-700 transition-colors" referrerPolicy="no-referrer" />
                                 ) : (
-                                  <div className="w-10 h-10 bg-emerald-100 text-neu-green rounded-full flex items-center justify-center font-bold">
+                                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 text-neu-green dark:text-emerald-400 rounded-full flex items-center justify-center font-bold transition-colors">
                                     {log.name.charAt(0)}
                                   </div>
                                 )}
                                 <div>
-                                  <p className="font-bold text-slate-900">{log.name}</p>
-                                  <p className="text-xs text-slate-500">{log.college}</p>
+                                  <p className="font-bold text-slate-900 dark:text-white transition-colors">{log.name}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 transition-colors">{log.college}</p>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="text-sm font-medium text-slate-700">{log.reason}</p>
-                                <p className="text-xs text-slate-400">{format(log.timestamp, 'HH:mm')}</p>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors">{log.reason}</p>
+                                <p className="text-xs text-slate-400 dark:text-slate-500 transition-colors">{format(log.timestamp, 'HH:mm')}</p>
                               </div>
                             </div>
                           ))}
@@ -3134,8 +3160,8 @@ function AppContent() {
                   <Route path="/logs" element={
                     <div className="space-y-8">
                       <div>
-                        <h1 className="text-3xl font-bold text-slate-900">Visitor Logs</h1>
-                        <p className="text-slate-500">View and manage all library visit records.</p>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">Visitor Logs</h1>
+                        <p className="text-slate-500 dark:text-slate-400 transition-colors">View and manage all library visit records.</p>
                       </div>
 
                       <div className="admin-card">
@@ -3147,8 +3173,8 @@ function AppContent() {
                   <Route path="/recycle-bin" element={
                     <div className="space-y-8">
                       <div>
-                        <h1 className="text-3xl font-bold text-slate-900">Recycle Bin</h1>
-                        <p className="text-slate-500">Restore or permanently delete removed records.</p>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">Recycle Bin</h1>
+                        <p className="text-slate-500 dark:text-slate-400 transition-colors">Restore or permanently delete removed records.</p>
                       </div>
 
                       <RecycleBin logs={deletedLogs} />
@@ -3164,8 +3190,8 @@ function AppContent() {
                   <Route path="/users" element={
                     <div className="space-y-8">
                       <div>
-                        <h1 className="text-3xl font-bold text-slate-900">User Search</h1>
-                        <p className="text-slate-500">Advanced search and filtering for all registered users.</p>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">User Search</h1>
+                        <p className="text-slate-500 dark:text-slate-400 transition-colors">Advanced search and filtering for all registered users.</p>
                       </div>
 
                       <AdminUserSearch users={allUsers} />
@@ -3175,29 +3201,19 @@ function AppContent() {
                   <Route path="/analytics" element={
                     <div className="space-y-8">
                       <div>
-                        <h1 className="text-3xl font-bold text-slate-900">Detailed Analytics</h1>
-                        <p className="text-slate-500">In-depth usage patterns and historical data.</p>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">Detailed Analytics</h1>
+                        <p className="text-slate-500 dark:text-slate-400 transition-colors">In-depth usage patterns and historical data.</p>
                       </div>
 
                       <DashboardAnalytics logs={activeLogs} loading={isInitialLoading} />
                     </div>
                   } />
 
-                  <Route path="/promote" element={
-                    <div className="space-y-8">
-                      <div>
-                        <h1 className="text-3xl font-bold text-slate-900">Admin Management</h1>
-                        <p className="text-slate-500">Manage user roles and administrative access.</p>
-                      </div>
-                      <AdminRolePromotion users={allUsers} />
-                    </div>
-                  } />
-
                   <Route path="/guide" element={
                     <div className="space-y-8">
                       <div>
-                        <h1 className="text-3xl font-bold text-slate-900">Administrator Guide</h1>
-                        <p className="text-slate-500">Learn how to use the LibTrack system features.</p>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">Administrator Guide</h1>
+                        <p className="text-slate-500 dark:text-slate-400 transition-colors">Learn how to use the LibTrack system features.</p>
                       </div>
                       <AdminUserGuide />
                     </div>
@@ -3212,14 +3228,15 @@ function AppContent() {
                   />
                 } />
               </Routes>
-            </main>
-          </div>
-        </ProtectedRoute>
+            </div>
+          </main>
+        </div>
+      </ProtectedRoute>
       } />
       </Routes>
 
       {/* Footer / Branding */}
-      <footer className="p-6 text-center text-slate-400 text-sm">
+      <footer className="p-6 text-center text-slate-400 dark:text-slate-500 text-sm transition-colors">
         <p>© 2026 NEU LibTrack • Library Visitor Management System</p>
       </footer>
     </div>

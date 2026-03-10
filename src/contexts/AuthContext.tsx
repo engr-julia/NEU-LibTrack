@@ -9,7 +9,6 @@ interface AuthContextType {
   role: UserRole | null;
   loading: boolean;
   logout: () => Promise<void>;
-  isVerified: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,42 +25,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(currentUser);
       
       if (currentUser) {
-        const ADMIN_EMAILS = ['admin@neu.edu.ph', 'engr.julia.rt@gmail.com'];
-
-        // Initial role based on email list to avoid permission errors while waiting for Firestore
-        const isHardcodedAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
-        if (isHardcodedAdmin) {
-          setRole('admin');
-        }
-
         // First check if user exists, if not create them
         try {
           const userData = await getAppUser(currentUser.uid);
           if (!userData) {
-            const initialRole = isHardcodedAdmin ? 'admin' : 'student';
-            await createAppUser(currentUser.uid, currentUser.email || '', initialRole);
-          } else if (isHardcodedAdmin && userData.role !== 'admin') {
-            // Auto-promote to admin if in the list but not yet admin in Firestore
-            const { updateUserRole } = await import('../services/firestoreService');
-            await updateUserRole(currentUser.uid, 'admin', 'system-auto-promote');
+            await createAppUser(currentUser.uid, currentUser.email || '', 'student');
           }
         } catch (err) {
-          console.warn("Initial user setup check failed (likely permissions):", err);
+          console.warn("Initial user setup check failed:", err);
         }
 
         // Then subscribe to real-time updates
         unsubscribeUser = subscribeToAppUser(currentUser.uid, (updatedUser) => {
-          let userRole: UserRole = isHardcodedAdmin ? 'admin' : 'student';
-          if (updatedUser) {
-            userRole = updatedUser.role;
-          }
-          
-          // Hardcoded admin override again to be safe
-          if (isHardcodedAdmin) {
-            userRole = 'admin';
-          }
-          
-          setRole(userRole);
+          setRole(updatedUser?.role || 'student');
           setLoading(false);
         });
       } else {
@@ -78,10 +54,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => signOut(auth);
 
-  const isVerified = user ? user.emailVerified : false;
-
   return (
-    <AuthContext.Provider value={{ user, role, loading, logout, isVerified }}>
+    <AuthContext.Provider value={{ user, role, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );

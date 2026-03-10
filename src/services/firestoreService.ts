@@ -292,9 +292,6 @@ export const softDeleteVisitorLog = async (logId: string, adminEmail: string) =>
       });
       
       await logAdminAction(adminEmail, 'soft_delete', { logId });
-      
-      // Automatic backup of the log being soft-deleted
-      await createBackup([logToBackup as any], adminEmail, 'auto');
     }
   } catch (error) {
     console.error("Error soft deleting log: ", error);
@@ -371,9 +368,6 @@ export const clearAllLogs = async (adminEmail: string, logs: VisitorLog[]) => {
     }
     
     await logAdminAction(adminEmail, 'clear_all_logs', { count: activeLogs.length });
-    
-    // Trigger backup after delete
-    await createBackup(activeLogs, adminEmail, 'auto');
   } catch (error) {
     console.error("Error clearing all logs: ", error);
     throw error;
@@ -406,11 +400,64 @@ export const bulkDeleteLogs = async (adminEmail: string, logs: VisitorLog[]) => 
     }
     
     await logAdminAction(adminEmail, 'bulk_delete_logs', { count: logs.length, logIds: logs.map(l => l.id) });
-    
-    // Trigger backup after delete
-    await createBackup(logs, adminEmail, 'auto');
   } catch (error) {
     console.error("Error bulk deleting logs: ", error);
+    throw error;
+  }
+};
+
+export const bulkPermanentDeleteLogs = async (adminEmail: string, logs: VisitorLog[]) => {
+  try {
+    // Requirement: Before any permanent delete, create a backup snapshot of the logs being deleted.
+    await createBackup(logs, adminEmail, 'auto');
+
+    // Firestore batch limit is 500
+    const chunks = [];
+    for (let i = 0; i < logs.length; i += 500) {
+      chunks.push(logs.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(log => {
+        const docRef = doc(db, LOGS_COLLECTION, log.id);
+        batch.delete(docRef);
+      });
+      await batch.commit();
+    }
+    
+    await logAdminAction(adminEmail, 'bulk_permanent_delete', { count: logs.length, logIds: logs.map(l => l.id) });
+  } catch (error) {
+    console.error("Error bulk permanently deleting logs: ", error);
+    throw error;
+  }
+};
+
+export const bulkRestoreLogs = async (adminEmail: string, logs: VisitorLog[]) => {
+  try {
+    // Firestore batch limit is 500
+    const chunks = [];
+    for (let i = 0; i < logs.length; i += 500) {
+      chunks.push(logs.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(log => {
+        const docRef = doc(db, LOGS_COLLECTION, log.id);
+        batch.update(docRef, {
+          status: 'active',
+          isDeleted: false,
+          deletedAt: null,
+          deletedBy: null
+        });
+      });
+      await batch.commit();
+    }
+    
+    await logAdminAction(adminEmail, 'bulk_restore_logs', { count: logs.length, logIds: logs.map(l => l.id) });
+  } catch (error) {
+    console.error("Error bulk restoring logs: ", error);
     throw error;
   }
 };
@@ -573,18 +620,5 @@ export const fetchAllUsers = async (): Promise<AppUser[]> => {
   } catch (error) {
     console.error("Error fetching all users: ", error);
     return [];
-  }
-};
-
-export const promoteUserToAdmin = async (uid: string, adminEmail: string) => {
-  try {
-    const docRef = doc(db, USERS_COLLECTION, uid);
-    await updateDoc(docRef, {
-      role: 'admin'
-    });
-    await logAdminAction(adminEmail, 'PROMOTE_USER_TO_ADMIN', { targetUid: uid });
-  } catch (error) {
-    console.error("Error promoting user to admin: ", error);
-    throw error;
   }
 };

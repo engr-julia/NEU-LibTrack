@@ -11,26 +11,32 @@
 
 @layer base {
   body {
-    @apply bg-emerald-50/30 text-slate-900 antialiased;
+    @apply bg-emerald-50/30 text-slate-900 antialiased transition-colors duration-300;
+  }
+  .dark body {
+    @apply bg-[#05120a] text-emerald-100;
+  }
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6, .dark .font-bold {
+    @apply text-emerald-50;
   }
 }
 
 .kiosk-button {
-  @apply flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-transparent bg-white shadow-sm transition-all hover:shadow-md hover:border-neu-green active:scale-95 text-center;
+  @apply flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-transparent bg-white shadow-sm transition-all hover:shadow-md hover:border-neu-green active:scale-95 text-center dark:bg-emerald-900/20 dark:border-emerald-800/30 dark:hover:border-emerald-500/50 dark:backdrop-blur-md;
 }
 
 .kiosk-button.active {
-  @apply border-neu-green bg-emerald-50 text-neu-green;
+  @apply border-neu-green bg-emerald-50 text-neu-green dark:bg-emerald-500/20 dark:border-emerald-400 dark:text-emerald-300;
 }
 
 .admin-card {
-  @apply bg-white rounded-xl border border-slate-200 shadow-sm p-6;
+  @apply bg-white rounded-xl border border-slate-200 shadow-sm p-6 dark:bg-emerald-900/10 dark:border-emerald-800/30 dark:backdrop-blur-md;
 }
 
 .modal-overlay {
-  @apply fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+  @apply fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 dark:bg-black/80;
 }
 
 .modal-content {
-  @apply bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col;
+  @apply bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col dark:bg-[#0a1f12] dark:border dark:border-emerald-800/50;
 }

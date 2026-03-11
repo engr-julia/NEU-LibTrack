@@ -22,9 +22,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let unsubscribeUser = () => {};
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      
       if (currentUser) {
+        // Domain restriction check
+        if (currentUser.email && !currentUser.email.toLowerCase().endsWith('@neu.edu.ph')) {
+          await signOut(auth);
+          setUser(null);
+          setRole(null);
+          setLoading(false);
+          return;
+        }
+
+        setUser(currentUser);
+        
         // First check if user exists, if not create them
         try {
           const userData = await getAppUser(currentUser.uid);
@@ -41,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(false);
         });
       } else {
+        setUser(null);
         setRole(null);
         setLoading(false);
       }

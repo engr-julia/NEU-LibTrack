@@ -5,8 +5,16 @@
   --color-neu-blue: #0038A8;
   --color-neu-red: #CE1126;
   --color-neu-gold: #FCD116;
-  --color-neu-green: #008C45;
+  --color-neu-green: #22c55e;
   --color-primary: var(--color-neu-green);
+  
+  /* Dark Mode Colors */
+  --color-dark-bg: #0b0f1a;
+  --color-dark-card: #1e293b;
+  --color-dark-secondary: #111827;
+  --color-dark-text-primary: #f1f5f9;
+  --color-dark-text-secondary: #94a3b8;
+  --color-dark-text-muted: #64748b;
 }
 
 @layer base {
@@ -14,23 +22,23 @@
     @apply bg-emerald-50/30 text-slate-900 antialiased transition-colors duration-300;
   }
   .dark body {
-    @apply bg-[#05120a] text-emerald-100;
+    @apply bg-dark-bg text-dark-text-primary;
   }
   .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6, .dark .font-bold {
-    @apply text-emerald-50;
+    @apply text-dark-text-primary;
   }
 }
 
 .kiosk-button {
-  @apply flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-transparent bg-white shadow-sm transition-all hover:shadow-md hover:border-neu-green active:scale-95 text-center dark:bg-emerald-900/20 dark:border-emerald-800/30 dark:hover:border-emerald-500/50 dark:backdrop-blur-md;
+  @apply flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-transparent bg-white shadow-sm transition-all hover:shadow-md hover:border-neu-green active:scale-95 text-center dark:bg-dark-card dark:border-slate-800 dark:hover:border-neu-green/50 dark:backdrop-blur-md;
 }
 
 .kiosk-button.active {
-  @apply border-neu-green bg-emerald-50 text-neu-green dark:bg-emerald-500/20 dark:border-emerald-400 dark:text-emerald-300;
+  @apply border-neu-green bg-emerald-50 text-neu-green dark:bg-neu-green/10 dark:border-neu-green dark:text-neu-green;
 }
 
 .admin-card {
-  @apply bg-white rounded-xl border border-slate-200 shadow-sm p-6 dark:bg-emerald-900/10 dark:border-emerald-800/30 dark:backdrop-blur-md;
+  @apply bg-white rounded-xl border border-slate-200 shadow-sm p-6 dark:bg-dark-card dark:border-slate-800 dark:shadow-lg dark:shadow-black/20;
 }
 
 .modal-overlay {
@@ -38,5 +46,5 @@
 }
 
 .modal-content {
-  @apply bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col dark:bg-[#0a1f12] dark:border dark:border-emerald-800/50;
+  @apply bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col dark:bg-dark-card dark:border dark:border-slate-800;
 }

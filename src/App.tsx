@@ -40,7 +40,8 @@ import {
   AlertTriangle,
   Lock,
   Sun,
-  Moon
+  Moon,
+  Menu
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { format, subDays, isToday, isThisWeek } from 'date-fns';
@@ -79,6 +80,8 @@ import {
   clearAllLogs,
   softDeleteAllLogs,
   bulkDeleteLogs,
+  bulkPermanentDeleteLogs,
+  clearRecycleBin,
   createBackup,
   subscribeToBackups,
   restoreBackup,
@@ -99,7 +102,7 @@ import {
 } from 'firebase/auth';
 
 // --- Constants ---
-const NEU_LOGO_URL = "https://upload.wikimedia.org/wikipedia/en/9/9e/New_Era_University_logo.png";
+const NEU_LOGO_URL = "NEU logo.JPG";
 
 // --- Components ---
 
@@ -121,20 +124,22 @@ const Logo = ({ className = "w-24 h-24" }: { className?: string }) => {
   
   if (error) {
     return (
-      <div className={cn("flex items-center justify-center bg-neu-green/10 rounded-full", className)}>
+      <div className={cn("flex items-center justify-center bg-neu-green/10 rounded-full overflow-hidden", className)}>
         <Library className="text-neu-green w-1/2 h-1/2" />
       </div>
     );
   }
 
   return (
-    <img 
-      src={NEU_LOGO_URL} 
-      alt="NEU Logo" 
-      className={cn("object-contain", className)}
-      referrerPolicy="no-referrer"
-      onError={() => setError(true)}
-    />
+    <div className={cn("rounded-full overflow-hidden border-2 border-emerald-100 dark:border-slate-800 bg-white shadow-sm", className)}>
+      <img 
+        src={NEU_LOGO_URL} 
+        alt="NEU Logo" 
+        className="w-full h-full object-cover"
+        referrerPolicy="no-referrer"
+        onError={() => setError(true)}
+      />
+    </div>
   );
 };
 
@@ -998,7 +1003,8 @@ const PasswordReauthModal = ({ isOpen, onClose, onConfirm, title, message }: {
 const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
   const { user: adminUser } = useAuth();
   const [isReauthOpen, setIsReauthOpen] = useState(false);
-  const [reauthAction, setReauthAction] = useState<{ type: 'restore' | 'delete', logId: string } | null>(null);
+  const [reauthAction, setReauthAction] = useState<{ type: 'restore' | 'delete' | 'bulk_delete' | 'clear', logId?: string, logIds?: string[] } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const handleActionClick = async (type: 'restore' | 'delete', logId: string) => {
     if (type === 'restore') {
@@ -1017,23 +1023,41 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
     }
   };
 
+  const handleBulkDeleteClick = () => {
+    if (selectedIds.length === 0) return;
+    setReauthAction({ type: 'bulk_delete', logIds: selectedIds });
+    setIsReauthOpen(true);
+  };
+
+  const handleClearAllClick = () => {
+    if (logs.length === 0) return;
+    setReauthAction({ type: 'clear' });
+    setIsReauthOpen(true);
+  };
+
   const handleConfirmAction = async (password: string) => {
     if (!reauthAction || !adminUser?.email) return;
 
-    const loadingToast = toast.loading(reauthAction.type === 'delete' ? "Permanently deleting..." : "Restoring...");
+    const loadingToast = toast.loading(reauthAction.type === 'restore' ? "Restoring..." : "Permanently deleting...");
     try {
-      // Check if user is Google user
+      // Re-authenticate
       const isGoogleUser = auth.currentUser?.providerData.some(p => p.providerId === 'google.com');
-      
       if (!isGoogleUser) {
-        // Re-authenticate for email/password users
         const credential = EmailAuthProvider.credential(adminUser.email, password);
         await reauthenticateWithCredential(auth.currentUser!, credential);
       }
 
-      if (reauthAction.type === 'delete') {
+      if (reauthAction.type === 'delete' && reauthAction.logId) {
         await permanentDeleteLog(reauthAction.logId, adminUser.email);
         toast.success("Log permanently deleted.", { id: loadingToast });
+      } else if (reauthAction.type === 'bulk_delete' && reauthAction.logIds) {
+        await bulkPermanentDeleteLogs(adminUser.email, reauthAction.logIds);
+        toast.success(`${reauthAction.logIds.length} logs permanently deleted.`, { id: loadingToast });
+        setSelectedIds([]);
+      } else if (reauthAction.type === 'clear') {
+        await clearRecycleBin(adminUser.email, logs);
+        toast.success("Recycle bin cleared successfully.", { id: loadingToast });
+        setSelectedIds([]);
       }
       setIsReauthOpen(false);
     } catch (error) {
@@ -1042,12 +1066,62 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => prev.length === logs.length ? [] : logs.map(l => l.id));
+  };
+
   return (
     <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={toggleSelectAll}
+            className="text-sm font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+          >
+            {selectedIds.length === logs.length ? 'Deselect All' : 'Select All'}
+          </button>
+          {selectedIds.length > 0 && (
+            <span className="text-sm font-bold text-neu-green">{selectedIds.length} selected</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {logs.length > 0 && (
+            <Button 
+              onClick={handleClearAllClick}
+              className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-2"
+            >
+              <Trash2 size={18} />
+              Clear Recycle Bin
+            </Button>
+          )}
+          {selectedIds.length > 0 && (
+            <Button 
+              onClick={handleBulkDeleteClick}
+              className="bg-red-600 text-white flex items-center gap-2 shadow-lg shadow-red-100 dark:shadow-none transition-all"
+            >
+              <Trash2 size={18} />
+              Permanently Delete Selected
+            </Button>
+          )}
+        </div>
+      </div>
+
       <div className="overflow-x-auto admin-card">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800 transition-colors">
+              <th className="pb-4 w-10">
+                <input 
+                  type="checkbox" 
+                  checked={logs.length > 0 && selectedIds.length === logs.length}
+                  onChange={toggleSelectAll}
+                  className="rounded border-slate-300 text-neu-green focus:ring-neu-green"
+                />
+              </th>
               <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Visitor</th>
               <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">College</th>
               <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Reason</th>
@@ -1059,13 +1133,24 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
           <tbody className="divide-y divide-slate-50 dark:divide-slate-800 transition-colors">
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-20 text-center text-slate-400 dark:text-slate-500 font-medium">
+                <td colSpan={7} className="py-20 text-center text-slate-400 dark:text-slate-500 font-medium">
                   Recycle bin is empty.
                 </td>
               </tr>
             ) : (
               logs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                <tr key={log.id} className={cn(
+                  "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors",
+                  selectedIds.includes(log.id) && "bg-emerald-50/30 dark:bg-emerald-900/10"
+                )}>
+                  <td className="py-4">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(log.id)}
+                      onChange={() => toggleSelect(log.id)}
+                      className="rounded border-slate-300 text-neu-green focus:ring-neu-green"
+                    />
+                  </td>
                   <td className="py-4">
                     <div className="flex items-center gap-3">
                       {log.photoURL ? (
@@ -1129,7 +1214,11 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
         title={reauthAction?.type === 'restore' ? "Restore Record" : "Permanent Deletion"}
         message={reauthAction?.type === 'restore' 
           ? "Please enter your password to restore this record to the active logs." 
-          : "This will permanently delete the record from Firestore. This action cannot be undone."}
+          : reauthAction?.type === 'bulk_delete'
+            ? `This will permanently delete ${reauthAction.logIds?.length} records from Firestore. This action cannot be undone.`
+            : reauthAction?.type === 'clear'
+              ? "This will permanently delete ALL records currently in the recycle bin. This action cannot be undone."
+              : "This will permanently delete the record from Firestore. This action cannot be undone."}
       />
     </div>
   );
@@ -1141,6 +1230,7 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isReauthOpen, setIsReauthOpen] = useState(false);
   const [selectedBackupId, setSelectedBackupId] = useState<string | null>(null);
+  const [viewingBackup, setViewingBackup] = useState<any | null>(null);
 
   useEffect(() => {
     if (adminUser && role === 'admin') {
@@ -1151,6 +1241,10 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
 
   const handleManualBackup = async () => {
     if (!adminUser?.email) return;
+    if (logs.length === 0) {
+      toast.error("No active visit logs to back up.");
+      return;
+    }
     setIsBackingUp(true);
     const loadingToast = toast.loading("Creating system backup...");
     try {
@@ -1193,6 +1287,8 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
       setSelectedBackupId(null);
     }
   };
+
+  const selectedBackup = backups.find(b => b.id === selectedBackupId);
 
   return (
     <div className="space-y-8">
@@ -1244,7 +1340,10 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
               <span>By: {backup.triggeredBy || 'System'}</span>
             </div>
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2 transition-colors">
-              <button className="flex-1 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-neu-green dark:hover:text-neu-green transition-colors">
+              <button 
+                onClick={() => setViewingBackup(backup)}
+                className="flex-1 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-neu-green dark:hover:text-neu-green transition-colors"
+              >
                 View Details
               </button>
               <button 
@@ -1265,12 +1364,125 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
         )}
       </div>
 
+      {/* View Details Modal */}
+      <AnimatePresence>
+        {viewingBackup && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-overlay"
+            onClick={() => setViewingBackup(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="modal-content max-w-4xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-emerald-50/50 dark:bg-emerald-900/10">
+                <div className="flex items-center gap-3 text-neu-green">
+                  <History size={24} />
+                  <h3 className="text-xl font-bold">Backup Snapshot Details</h3>
+                </div>
+                <button onClick={() => setViewingBackup(null)} className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-full">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-8 max-h-[60vh] overflow-y-auto space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/50 rounded-2xl">
+                    <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Date</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{format(viewingBackup.backupDate, 'MMM dd, yyyy')}</p>
+                  </div>
+                  <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/50 rounded-2xl">
+                    <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Time</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{format(viewingBackup.backupDate, 'HH:mm:ss')}</p>
+                  </div>
+                  <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/50 rounded-2xl">
+                    <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Records</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{viewingBackup.recordCount}</p>
+                  </div>
+                  <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/50 rounded-2xl">
+                    <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Type</p>
+                    <p className="font-bold text-slate-900 dark:text-white uppercase">{viewingBackup.type}</p>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/50 rounded-2xl space-y-2">
+                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                    <AlertTriangle size={18} />
+                    <h4 className="font-bold">Restoration Summary</h4>
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Restoring this snapshot will re-insert <span className="font-bold text-slate-900 dark:text-white">{viewingBackup.recordCount}</span> records into the active visitor logs. 
+                    <span className="block mt-1 font-medium text-amber-700 dark:text-amber-300 italic">Note: This backup will be removed from the history once restored.</span>
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-slate-900 dark:text-white">Snapshot Records</h4>
+                    <span className="text-xs text-slate-500">Showing all records in this snapshot</span>
+                  </div>
+                  <div className="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-slate-50 dark:bg-slate-800">
+                        <tr>
+                          <th className="px-4 py-3 font-bold">Visitor</th>
+                          <th className="px-4 py-3 font-bold">College</th>
+                          <th className="px-4 py-3 font-bold">Reason</th>
+                          <th className="px-4 py-3 font-bold">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                        {viewingBackup.data?.map((log: any, i: number) => (
+                          <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                            <td className="px-4 py-3">
+                              <p className="font-bold text-slate-900 dark:text-white">{log.name}</p>
+                              <p className="text-[10px] text-slate-500">{log.email}</p>
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{log.college}</td>
+                            <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{log.reason}</td>
+                            <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                              {log.timestamp ? format(log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp), 'MMM dd, HH:mm') : 'N/A'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+                <Button onClick={() => setViewingBackup(null)} className="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  Close Details
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleRestoreClick(viewingBackup.id);
+                    setViewingBackup(null);
+                  }}
+                  className="bg-neu-green text-white flex items-center gap-2"
+                >
+                  <RefreshCw size={18} />
+                  Restore This Snapshot
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <PasswordReauthModal 
         isOpen={isReauthOpen}
         onClose={() => setIsReauthOpen(false)}
         onConfirm={handleConfirmRestore}
         title="Restore Backup Confirmation"
-        message="This will overwrite or add records to the current logs from this backup snapshot. Please verify your admin password."
+        message={selectedBackup 
+          ? `Are you sure you want to restore the snapshot from ${format(selectedBackup.backupDate, 'MMMM dd, yyyy HH:mm')}? This will restore ${selectedBackup.recordCount} records to the active logs.`
+          : "This will overwrite or add records to the current logs from this backup snapshot. Please verify your admin password."}
       />
     </div>
   );
@@ -1280,6 +1492,7 @@ const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
+  const [isOpen, setIsOpen] = useState(true);
 
   const links = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -1301,61 +1514,82 @@ const AdminSidebar = () => {
   };
 
   return (
-    <div className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0 flex flex-col transition-colors">
-      <div className="p-6 border-bottom border-slate-100 dark:border-slate-800 flex items-center gap-3">
-        <Logo className="w-8 h-8" />
-        <span className="font-bold text-xl tracking-tight dark:text-white">LibTrack</span>
-      </div>
-      <nav className="flex-1 p-4 space-y-2">
-        {links.map((link) => (
-          <button
-            key={link.path}
-            onClick={() => navigate(link.path)}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors",
-              location.pathname === link.path 
-                ? "bg-emerald-50 dark:bg-neu-green/10 text-neu-green" 
-                : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
-            )}
+    <>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed top-6 left-6 z-[60] p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg lg:hidden"
+      >
+        {isOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      <div className={cn(
+        "bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0 flex flex-col transition-all duration-300 z-50",
+        isOpen ? "w-64 translate-x-0" : "w-0 -translate-x-full lg:w-20 lg:translate-x-0"
+      )}>
+        <div className={cn("p-6 border-bottom border-slate-100 dark:border-slate-800 flex items-center gap-3", !isOpen && "lg:justify-center")}>
+          <Logo className="w-8 h-8" />
+          {isOpen && <span className="font-bold text-xl tracking-tight dark:text-white">LibTrack</span>}
+        </div>
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          {links.map((link) => (
+            <button
+              key={link.path}
+              onClick={() => {
+                navigate(link.path);
+                if (window.innerWidth < 1024) setIsOpen(false);
+              }}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors",
+                location.pathname === link.path 
+                  ? "bg-emerald-50 dark:bg-neu-green/10 text-neu-green" 
+                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white",
+                !isOpen && "lg:justify-center lg:px-0"
+              )}
+              title={!isOpen ? link.name : ""}
+            >
+              <link.icon size={20} />
+              {isOpen && <span>{link.name}</span>}
+            </button>
+          ))}
+        </nav>
+        
+        {/* Profile Section */}
+        <div className={cn("p-4 mx-4 mb-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex items-center gap-3 border border-slate-100 dark:border-slate-800 transition-colors", !isOpen && "lg:mx-2 lg:p-2 lg:justify-center")}>
+          {user?.photoURL ? (
+            <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-700 shadow-sm" referrerPolicy="no-referrer" />
+          ) : (
+            <div className="w-10 h-10 bg-neu-green/10 text-neu-green rounded-full flex items-center justify-center font-bold">
+              {user?.email?.charAt(0).toUpperCase()}
+            </div>
+          )}
+          {isOpen && (
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.email?.split('@')[0]}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">Administrator</p>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2 transition-colors">
+          <button 
+            onClick={() => navigate('/')}
+            className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors", !isOpen && "lg:justify-center lg:px-0")}
+            title={!isOpen ? "Exit Admin" : ""}
           >
-            <link.icon size={20} />
-            {link.name}
+            <ArrowLeft size={20} />
+            {isOpen && <span>Exit Admin</span>}
           </button>
-        ))}
-      </nav>
-      
-      {/* Profile Section */}
-      <div className="p-4 mx-4 mb-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex items-center gap-3 border border-slate-100 dark:border-slate-800 transition-colors">
-        {user?.photoURL ? (
-          <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-700 shadow-sm" referrerPolicy="no-referrer" />
-        ) : (
-          <div className="w-10 h-10 bg-neu-green/10 text-neu-green rounded-full flex items-center justify-center font-bold">
-            {user?.email?.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.email?.split('@')[0]}</p>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">Administrator</p>
+          <button 
+            onClick={handleLogout}
+            className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors", !isOpen && "lg:justify-center lg:px-0")}
+            title={!isOpen ? "Sign Out" : ""}
+          >
+            <X size={20} />
+            {isOpen && <span>Sign Out</span>}
+          </button>
         </div>
       </div>
-
-      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2 transition-colors">
-        <button 
-          onClick={() => navigate('/')}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
-        >
-          <ArrowLeft size={20} />
-          Exit Admin
-        </button>
-        <button 
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
-        >
-          <X size={20} />
-          Sign Out
-        </button>
-      </div>
-    </div>
+    </>
   );
 };
 
@@ -1966,8 +2200,6 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
 // This is now handled by AuthContext and Firestore
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -1975,42 +2207,9 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (user) {
-      if (!user.emailVerified) {
-        navigate('/verify');
-        return;
-      }
       // Redirection is now handled by AppContent based on role
     }
   }, [user, navigate]);
-
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // Domain restriction check
-      if (userCredential.user.email && !userCredential.user.email.toLowerCase().endsWith('@neu.edu.ph')) {
-        await signOut(auth);
-        alert("Please use your official @neu.edu.ph account to access the system.");
-        setError("Unauthorized domain. Use @neu.edu.ph");
-        setLoading(false);
-        return;
-      }
-
-      if (!userCredential.user.emailVerified) {
-        navigate('/verify');
-        return;
-      }
-      // Redirection is now handled by AppContent based on role
-    } catch (err: any) {
-      setError('Email or password is incorrect');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGoogleSignIn = async () => {
     setError('');
@@ -2021,14 +2220,9 @@ const LoginPage = () => {
       // Domain restriction check
       if (userCredential.user.email && !userCredential.user.email.toLowerCase().endsWith('@neu.edu.ph')) {
         await signOut(auth);
-        alert("Please use your official @neu.edu.ph account to access the system.");
+        alert("Access Denied: Only @neu.edu.ph accounts are allowed to access this system.");
         setError("Unauthorized domain. Use @neu.edu.ph");
         setLoading(false);
-        return;
-      }
-
-      if (!userCredential.user.emailVerified) {
-        navigate('/verify');
         return;
       }
       // Redirection is now handled by AppContent based on role
@@ -2050,87 +2244,43 @@ const LoginPage = () => {
         <div className="text-center mb-10">
           <Logo className="w-24 h-24 mx-auto mb-4" />
           <h2 className="text-3xl font-black text-slate-900 dark:text-white">NEU LibTrack</h2>
-          <p className="text-slate-500 dark:text-slate-400">Access the Library System</p>
+          <p className="text-slate-500 dark:text-slate-400">Library Visitor Management System</p>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-6">
+        <div className="space-y-6">
           {error && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium border border-red-100 dark:border-red-900/30 transition-colors">
               {error}
             </div>
           )}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 transition-colors">Email Address</label>
-            <Input 
-              type="email" 
-              placeholder="admin@neu.edu.ph" 
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="text-base h-14 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white transition-colors"
-            />
+          
+          <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800 text-center space-y-4">
+            <p className="text-sm text-slate-600 dark:text-slate-400">Please sign in with your official university email to continue.</p>
+            <Button 
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-4 flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
+              )}
+              <span className="font-bold">Continue with Google</span>
+            </Button>
+            <p className="text-[10px] font-bold text-neu-green uppercase tracking-widest">Only @neu.edu.ph allowed</p>
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 transition-colors">Password</label>
-            <Input 
-              type="password" 
-              placeholder="••••••••" 
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className="text-base h-14 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white transition-colors"
-            />
-          </div>
-          <Button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-neu-green text-white py-4 text-lg shadow-lg shadow-emerald-100 dark:shadow-none hover:bg-emerald-700 transition-all"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </form>
-
-        <div className="mt-8 text-center">
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium transition-colors">
-            Don't have an account?{' '}
-            <button onClick={() => navigate('/register')} className="text-neu-green dark:text-emerald-400 font-bold hover:underline">
-              Register
-            </button>
-          </p>
-        </div>
-        
-        <div className="mt-6 flex flex-col gap-4">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 transition-colors">Or continue with</span>
-            </div>
-          </div>
-
-          <button 
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 disabled:opacity-50"
-          >
-            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" referrerPolicy="no-referrer" />
-            Sign in with Google
-          </button>
         </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium transition-colors">
-            Login using your NEU credentials
-          </p>
+        <div className="mt-10 text-center">
+          <p className="text-[10px] text-slate-400 dark:text-slate-600 uppercase font-bold tracking-widest">New Era University • Library</p>
         </div>
       </motion.div>
     </div>
   );
 };
-
 const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode, allowedRole?: UserRole }) => {
-  const { user, loading, isVerified, role } = useAuth();
+  const { user, loading, role } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -2138,8 +2288,6 @@ const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode, 
     if (!loading) {
       if (!user) {
         navigate('/login');
-      } else if (!isVerified) {
-        navigate('/verify');
       } else if (allowedRole && role && role !== allowedRole) {
         // Redirect if role doesn't match
         if (role === 'admin') {
@@ -2149,9 +2297,9 @@ const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode, 
         }
       }
     }
-  }, [user, loading, isVerified, role, allowedRole, navigate]);
+  }, [user, loading, role, allowedRole, navigate]);
 
-  if (loading || (user && isVerified && !role)) {
+  if (loading || (user && !role)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-emerald-50/10">
         <div className="w-12 h-12 border-4 border-neu-green border-t-transparent rounded-full animate-spin" />
@@ -2162,7 +2310,7 @@ const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode, 
   // If role is required but not yet loaded, or doesn't match, don't show children
   if (allowedRole && role !== allowedRole) return null;
 
-  return (user && isVerified) ? <>{children}</> : null;
+  return user ? <>{children}</> : null;
 };
 
 const DashboardAnalytics = ({ logs, loading }: { logs: VisitorLog[], loading?: boolean }) => {
@@ -2634,7 +2782,7 @@ const AdminUserDetail = ({
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, role, isVerified } = useAuth();
+  const { user, role } = useAuth();
   const [userRoleData, setUserRoleData] = useState<AppUser | null>(null);
   const [allUsers, setAllUsers] = useState<AppUser[]>([]);
   const [logs, setLogs] = useState<VisitorLog[]>([]);
@@ -2886,8 +3034,6 @@ function AppContent() {
           </ProtectedRoute>
         } />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/verify" element={<VerificationPage />} />
         <Route path="/profile" element={
           <ProtectedRoute allowedRole="student">
             <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-slate-950">

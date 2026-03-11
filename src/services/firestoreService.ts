@@ -277,13 +277,6 @@ export const softDeleteVisitorLog = async (logId: string, adminEmail: string) =>
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
-      const logData = docSnap.data();
-      const logToBackup = { 
-        id: docSnap.id, 
-        ...logData, 
-        timestamp: logData.timestamp?.toDate() 
-      };
-
       await updateDoc(docRef, {
         status: 'deleted',
         isDeleted: true,
@@ -292,9 +285,6 @@ export const softDeleteVisitorLog = async (logId: string, adminEmail: string) =>
       });
       
       await logAdminAction(adminEmail, 'soft_delete', { logId });
-      
-      // Automatic backup of the log being soft-deleted
-      await createBackup([logToBackup as any], adminEmail, 'auto');
     }
   } catch (error) {
     console.error("Error soft deleting log: ", error);
@@ -346,6 +336,79 @@ export const permanentDeleteLog = async (logId: string, adminEmail: string) => {
   }
 };
 
+export const bulkPermanentDeleteLogs = async (adminEmail: string, logIds: string[]) => {
+  try {
+    // Fetch logs before deletion for backup
+    const logsToBackup: any[] = [];
+    for (const id of logIds) {
+      const docRef = doc(db, LOGS_COLLECTION, id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const logData = docSnap.data();
+        logsToBackup.push({
+          id: docSnap.id,
+          ...logData,
+          timestamp: logData.timestamp?.toDate()
+        });
+      }
+    }
+
+    if (logsToBackup.length > 0) {
+      await createBackup(logsToBackup, adminEmail, 'auto');
+    }
+
+    // Firestore batch limit is 500
+    const chunks = [];
+    for (let i = 0; i < logIds.length; i += 500) {
+      chunks.push(logIds.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(id => {
+        const docRef = doc(db, LOGS_COLLECTION, id);
+        batch.delete(docRef);
+      });
+      await batch.commit();
+    }
+    
+    await logAdminAction(adminEmail, 'bulk_permanent_delete', { count: logIds.length, logIds });
+  } catch (error) {
+    console.error("Error bulk permanently deleting logs: ", error);
+    throw error;
+  }
+};
+
+export const clearRecycleBin = async (adminEmail: string, logs: VisitorLog[]) => {
+  try {
+    const deletedLogs = logs.filter(l => (l.status || 'active') === 'deleted');
+    if (deletedLogs.length === 0) return;
+
+    // Trigger backup before permanent delete
+    await createBackup(deletedLogs, adminEmail, 'auto');
+
+    // Firestore batch limit is 500
+    const chunks = [];
+    for (let i = 0; i < deletedLogs.length; i += 500) {
+      chunks.push(deletedLogs.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(log => {
+        const docRef = doc(db, LOGS_COLLECTION, log.id);
+        batch.delete(docRef);
+      });
+      await batch.commit();
+    }
+    
+    await logAdminAction(adminEmail, 'clear_recycle_bin', { count: deletedLogs.length });
+  } catch (error) {
+    console.error("Error clearing recycle bin: ", error);
+    throw error;
+  }
+};
+
 export const clearAllLogs = async (adminEmail: string, logs: VisitorLog[]) => {
   try {
     const activeLogs = logs.filter(l => (l.status || 'active') === 'active');
@@ -371,9 +434,6 @@ export const clearAllLogs = async (adminEmail: string, logs: VisitorLog[]) => {
     }
     
     await logAdminAction(adminEmail, 'clear_all_logs', { count: activeLogs.length });
-    
-    // Trigger backup after delete
-    await createBackup(activeLogs, adminEmail, 'auto');
   } catch (error) {
     console.error("Error clearing all logs: ", error);
     throw error;
@@ -406,9 +466,6 @@ export const bulkDeleteLogs = async (adminEmail: string, logs: VisitorLog[]) => 
     }
     
     await logAdminAction(adminEmail, 'bulk_delete_logs', { count: logs.length, logIds: logs.map(l => l.id) });
-    
-    // Trigger backup after delete
-    await createBackup(logs, adminEmail, 'auto');
   } catch (error) {
     console.error("Error bulk deleting logs: ", error);
     throw error;
@@ -420,6 +477,10 @@ export const bulkDeleteLogs = async (adminEmail: string, logs: VisitorLog[]) => 
 const BACKUPS_COLLECTION = "visitLogs_backup";
 
 export const createBackup = async (logs: VisitorLog[], adminEmail: string, type: 'auto' | 'manual' = 'manual') => {
+  if (logs.length === 0) {
+    console.warn("Attempted to create a backup with zero records. Operation aborted.");
+    return;
+  }
   try {
     const cleanedLogs = logs.map(l => {
       const cleaned = cleanData(l);
@@ -531,6 +592,9 @@ export const restoreBackup = async (backupId: string, adminEmail: string) => {
       }
       
       await logAdminAction(adminEmail, 'restore_backup', { backupId, recordCount: logsToRestore.length });
+      
+      // Delete the backup document after successful restoration to ensure it can only be restored once
+      await deleteDoc(docRef);
     }
   } catch (error) {
     console.error("Error restoring backup: ", error);

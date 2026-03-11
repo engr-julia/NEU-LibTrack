@@ -1,9 +1,9 @@
 
 # Run and deploy NEU LibTrack
 
-This contains everything you need to run your app locally.
+This contains everything you need to run the app locally.
 
-View app in AI Studio: https://ai.studio/apps/d42824b4-be3c-418f-9362-2deeab772d08
+View app: https://final-neu-libtrack.vercel.app?_vercel_share=zxvmP9ucm0ijKV6caB1DtYXsXU7vMqgN
 
 ## Run Locally
 

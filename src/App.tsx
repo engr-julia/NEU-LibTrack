@@ -40,10 +40,7 @@ import {
   AlertTriangle,
   Lock,
   Sun,
-  Moon,
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen
+  Moon
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { format, subDays, isToday, isThisWeek } from 'date-fns';
@@ -82,8 +79,6 @@ import {
   clearAllLogs,
   softDeleteAllLogs,
   bulkDeleteLogs,
-  bulkPermanentDeleteLogs,
-  bulkRestoreLogs,
   createBackup,
   subscribeToBackups,
   restoreBackup,
@@ -104,7 +99,7 @@ import {
 } from 'firebase/auth';
 
 // --- Constants ---
-const NEU_LOGO_URL = "https://raw.githubusercontent.com/engr-julia/NEU-LibTrack/main/src/NEU%20logo.JPG";
+const NEU_LOGO_URL = "https://upload.wikimedia.org/wikipedia/en/9/9e/New_Era_University_logo.png";
 
 // --- Components ---
 
@@ -133,15 +128,13 @@ const Logo = ({ className = "w-24 h-24" }: { className?: string }) => {
   }
 
   return (
-    <div className={cn("rounded-full overflow-hidden border-2 border-white/20 shadow-lg bg-white", className)}>
-      <img 
-        src={NEU_LOGO_URL} 
-        alt="NEU Logo" 
-        className="w-full h-full object-cover"
-        referrerPolicy="no-referrer"
-        onError={() => setError(true)}
-      />
-    </div>
+    <img 
+      src={NEU_LOGO_URL} 
+      alt="NEU Logo" 
+      className={cn("object-contain", className)}
+      referrerPolicy="no-referrer"
+      onError={() => setError(true)}
+    />
   );
 };
 
@@ -802,6 +795,109 @@ const VerificationPage = () => {
   );
 };
 
+const RegisterPage = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      if (!email.toLowerCase().endsWith('@neu.edu.ph')) {
+        setError("Please use your official @neu.edu.ph account to access the system.");
+        setLoading(false);
+        return;
+      }
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(userCredential.user);
+      await signOut(auth); // Do not sign them in automatically
+      navigate('/verify', { state: { email } });
+    } catch (err: any) {
+      let message = 'Registration failed';
+      if (err.code === 'auth/email-already-in-use') message = 'Email already in use';
+      if (err.code === 'auth/weak-password') message = 'Password is too weak';
+      setError(message);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 dark:bg-slate-950 p-6 transition-colors">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-md w-full bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100 dark:border-slate-800 transition-colors"
+      >
+        <div className="text-center mb-10">
+          <Logo className="w-24 h-24 mx-auto mb-4" />
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white">NEU LibTrack</h2>
+          <p className="text-slate-500 dark:text-slate-400">Create your account</p>
+        </div>
+
+        <form onSubmit={handleRegister} className="space-y-6">
+          {error && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium border border-red-100 dark:border-red-900/30 transition-colors">
+              {error}
+            </div>
+          )}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 transition-colors">Email Address</label>
+            <Input 
+              type="email" 
+              placeholder="your@email.com" 
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              className="text-base h-14 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white transition-colors"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 transition-colors">Password</label>
+            <Input 
+              type="password" 
+              placeholder="••••••••" 
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              className="text-base h-14 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white transition-colors"
+            />
+          </div>
+          <Button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-neu-green text-white py-4 text-lg shadow-lg shadow-emerald-100 dark:shadow-none hover:bg-emerald-700 transition-all"
+          >
+            {loading ? 'Creating account...' : 'Register'}
+          </Button>
+        </form>
+
+        <div className="mt-8 text-center">
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium transition-colors">
+            Already have an account?{' '}
+            <button onClick={() => navigate('/login')} className="text-neu-green dark:text-emerald-400 font-bold hover:underline">
+              Sign In
+            </button>
+          </p>
+        </div>
+
+        <button 
+          onClick={() => navigate('/')}
+          className="w-full mt-6 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Back to Kiosk
+        </button>
+      </motion.div>
+    </div>
+  );
+};
+
 // --- Admin Components ---
 
 // --- Admin Components ---
@@ -902,26 +998,11 @@ const PasswordReauthModal = ({ isOpen, onClose, onConfirm, title, message }: {
 const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
   const { user: adminUser } = useAuth();
   const [isReauthOpen, setIsReauthOpen] = useState(false);
-  const [reauthAction, setReauthAction] = useState<{ type: 'restore' | 'delete' | 'bulk_restore' | 'bulk_delete', logId?: string, selectedLogs?: VisitorLog[] } | null>(null);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [reauthAction, setReauthAction] = useState<{ type: 'restore' | 'delete', logId: string } | null>(null);
 
-  const toggleSelectAll = () => {
-    if (selectedIds.length === logs.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(logs.map(l => l.id));
-    }
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  const handleActionClick = async (type: 'restore' | 'delete' | 'bulk_restore' | 'bulk_delete', logId?: string) => {
+  const handleActionClick = async (type: 'restore' | 'delete', logId: string) => {
     if (type === 'restore') {
-      if (!adminUser?.email || !logId) return;
+      if (!adminUser?.email) return;
       const loadingToast = toast.loading("Restoring log...");
       try {
         await restoreLog(logId, adminUser.email);
@@ -930,23 +1011,6 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
         console.error("Restore error:", error);
         toast.error("Failed to restore log.", { id: loadingToast });
       }
-    } else if (type === 'bulk_restore') {
-      if (!adminUser?.email || selectedIds.length === 0) return;
-      const loadingToast = toast.loading(`Restoring ${selectedIds.length} logs...`);
-      try {
-        const logsToRestore = logs.filter(l => selectedIds.includes(l.id));
-        await bulkRestoreLogs(adminUser.email, logsToRestore);
-        setSelectedIds([]);
-        toast.success("Logs restored successfully.", { id: loadingToast });
-      } catch (error) {
-        console.error("Bulk restore error:", error);
-        toast.error("Failed to restore logs.", { id: loadingToast });
-      }
-    } else if (type === 'bulk_delete') {
-      if (selectedIds.length === 0) return;
-      const selectedLogs = logs.filter(l => selectedIds.includes(l.id));
-      setReauthAction({ type, selectedLogs });
-      setIsReauthOpen(true);
     } else {
       setReauthAction({ type, logId });
       setIsReauthOpen(true);
@@ -956,11 +1020,7 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
   const handleConfirmAction = async (password: string) => {
     if (!reauthAction || !adminUser?.email) return;
 
-    const isBulk = reauthAction.type.startsWith('bulk_');
-    const loadingToast = toast.loading(
-      reauthAction.type.includes('delete') ? "Permanently deleting..." : "Restoring..."
-    );
-
+    const loadingToast = toast.loading(reauthAction.type === 'delete' ? "Permanently deleting..." : "Restoring...");
     try {
       // Check if user is Google user
       const isGoogleUser = auth.currentUser?.providerData.some(p => p.providerId === 'google.com');
@@ -971,13 +1031,9 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
         await reauthenticateWithCredential(auth.currentUser!, credential);
       }
 
-      if (reauthAction.type === 'delete' && reauthAction.logId) {
+      if (reauthAction.type === 'delete') {
         await permanentDeleteLog(reauthAction.logId, adminUser.email);
         toast.success("Log permanently deleted.", { id: loadingToast });
-      } else if (reauthAction.type === 'bulk_delete' && reauthAction.selectedLogs) {
-        await bulkPermanentDeleteLogs(adminUser.email, reauthAction.selectedLogs);
-        setSelectedIds([]);
-        toast.success(`${reauthAction.selectedLogs.length} logs permanently deleted.`, { id: loadingToast });
       }
       setIsReauthOpen(false);
     } catch (error) {
@@ -988,76 +1044,28 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Recycle Bin</h2>
-          <p className="text-slate-500 dark:text-slate-400">Manage deleted visitor logs.</p>
-        </div>
-        
-        {selectedIds.length > 0 && (
-          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4">
-            <span className="text-sm font-medium text-slate-500 dark:text-slate-400 mr-2">
-              {selectedIds.length} selected
-            </span>
-            <button
-              onClick={() => handleActionClick('bulk_restore')}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all"
-            >
-              <RefreshCw size={18} />
-              Restore Selected
-            </button>
-            <button
-              onClick={() => handleActionClick('bulk_delete')}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
-            >
-              <Trash2 size={18} />
-              Delete Permanently
-            </button>
-          </div>
-        )}
-      </div>
-
       <div className="overflow-x-auto admin-card">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800 transition-colors">
-              <th className="pb-4 pl-4">
-                <input 
-                  type="checkbox" 
-                  checked={logs.length > 0 && selectedIds.length === logs.length}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-slate-300 text-neu-green focus:ring-neu-green"
-                />
-              </th>
               <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Visitor</th>
               <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">College</th>
               <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Reason</th>
               <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Original Date</th>
               <th className="pb-4 font-bold text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Deleted Info</th>
-              <th className="pb-4 pr-4"></th>
+              <th className="pb-4"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-800 transition-colors">
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-20 text-center text-slate-400 dark:text-slate-500 font-medium">
+                <td colSpan={6} className="py-20 text-center text-slate-400 dark:text-slate-500 font-medium">
                   Recycle bin is empty.
                 </td>
               </tr>
             ) : (
               logs.map((log) => (
-                <tr key={log.id} className={cn(
-                  "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors",
-                  selectedIds.includes(log.id) ? "bg-emerald-50/30 dark:bg-emerald-900/10" : ""
-                )}>
-                  <td className="py-4 pl-4">
-                    <input 
-                      type="checkbox" 
-                      checked={selectedIds.includes(log.id)}
-                      onChange={() => toggleSelect(log.id)}
-                      className="w-4 h-4 rounded border-slate-300 text-neu-green focus:ring-neu-green"
-                    />
-                  </td>
+                <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="py-4">
                     <div className="flex items-center gap-3">
                       {log.photoURL ? (
@@ -1089,7 +1097,7 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
                       <p className="text-slate-400 dark:text-slate-500">By: {log.deletedBy || 'Unknown'}</p>
                     </div>
                   </td>
-                  <td className="py-4 pr-4 text-right">
+                  <td className="py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button 
                         onClick={() => handleActionClick('restore', log.id)}
@@ -1118,10 +1126,10 @@ const RecycleBin = ({ logs }: { logs: VisitorLog[] }) => {
         isOpen={isReauthOpen}
         onClose={() => setIsReauthOpen(false)}
         onConfirm={handleConfirmAction}
-        title={reauthAction?.type.includes('restore') ? "Restore Records" : "Permanent Deletion"}
-        message={reauthAction?.type.includes('restore') 
-          ? `Please enter your password to restore ${reauthAction.selectedLogs ? reauthAction.selectedLogs.length : 'this'} record(s) to the active logs.` 
-          : `This will permanently delete ${reauthAction?.selectedLogs ? reauthAction.selectedLogs.length : 'the'} record(s) from Firestore. This action cannot be undone.`}
+        title={reauthAction?.type === 'restore' ? "Restore Record" : "Permanent Deletion"}
+        message={reauthAction?.type === 'restore' 
+          ? "Please enter your password to restore this record to the active logs." 
+          : "This will permanently delete the record from Firestore. This action cannot be undone."}
       />
     </div>
   );
@@ -1268,17 +1276,7 @@ const BackupManagement = ({ logs }: { logs: VisitorLog[] }) => {
   );
 };
 
-const AdminSidebar = ({ 
-  isCollapsed, 
-  setIsCollapsed, 
-  isMobileOpen, 
-  setIsMobileOpen 
-}: { 
-  isCollapsed: boolean, 
-  setIsCollapsed: (v: boolean) => void,
-  isMobileOpen: boolean,
-  setIsMobileOpen: (v: boolean) => void
-}) => {
+const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
@@ -1302,133 +1300,62 @@ const AdminSidebar = ({
     }
   };
 
-  const sidebarContent = (
-    <div className={cn(
-      "bg-white dark:bg-[#020617] border-r border-slate-200 dark:border-slate-800/60 h-screen sticky top-0 flex flex-col transition-all duration-300 ease-in-out z-50",
-      isCollapsed ? "w-20" : "w-64"
-    )}>
-      <div className={cn(
-        "p-6 border-b border-slate-100 dark:border-slate-800 flex items-center transition-all",
-        isCollapsed ? "justify-center" : "justify-between"
-      )}>
-        {!isCollapsed && (
-          <div className="flex items-center gap-3 overflow-hidden">
-            <Logo className="w-8 h-8 flex-shrink-0" />
-            <span className="font-bold text-xl tracking-tight dark:text-white whitespace-nowrap">LibTrack</span>
-          </div>
-        )}
-        {isCollapsed && <Logo className="w-8 h-8" />}
-        <button 
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden lg:flex p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
-        >
-          {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-        </button>
-        <button 
-          onClick={() => setIsMobileOpen(false)}
-          className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
-        >
-          <X size={20} />
-        </button>
+  return (
+    <div className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0 flex flex-col transition-colors">
+      <div className="p-6 border-bottom border-slate-100 dark:border-slate-800 flex items-center gap-3">
+        <Logo className="w-8 h-8" />
+        <span className="font-bold text-xl tracking-tight dark:text-white">LibTrack</span>
       </div>
-
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden">
+      <nav className="flex-1 p-4 space-y-2">
         {links.map((link) => (
           <button
             key={link.path}
-            onClick={() => {
-              navigate(link.path);
-              setIsMobileOpen(false);
-            }}
-            title={isCollapsed ? link.name : ""}
+            onClick={() => navigate(link.path)}
             className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all group",
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors",
               location.pathname === link.path 
                 ? "bg-emerald-50 dark:bg-neu-green/10 text-neu-green" 
                 : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
             )}
           >
-            <link.icon size={20} className="flex-shrink-0" />
-            {!isCollapsed && <span className="whitespace-nowrap">{link.name}</span>}
+            <link.icon size={20} />
+            {link.name}
           </button>
         ))}
       </nav>
       
       {/* Profile Section */}
-      <div className={cn(
-        "p-4 mx-4 mb-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex items-center gap-3 border border-slate-100 dark:border-slate-800 transition-all overflow-hidden",
-        isCollapsed ? "px-2 mx-2 justify-center" : ""
-      )}>
+      <div className="p-4 mx-4 mb-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex items-center gap-3 border border-slate-100 dark:border-slate-800 transition-colors">
         {user?.photoURL ? (
-          <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-700 shadow-sm flex-shrink-0" referrerPolicy="no-referrer" />
+          <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-700 shadow-sm" referrerPolicy="no-referrer" />
         ) : (
-          <div className="w-10 h-10 bg-neu-green/10 text-neu-green rounded-full flex items-center justify-center font-bold flex-shrink-0">
+          <div className="w-10 h-10 bg-neu-green/10 text-neu-green rounded-full flex items-center justify-center font-bold">
             {user?.email?.charAt(0).toUpperCase()}
           </div>
         )}
-        {!isCollapsed && (
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.email?.split('@')[0]}</p>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">Administrator</p>
-          </div>
-        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.email?.split('@')[0]}</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">Administrator</p>
+        </div>
       </div>
 
       <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2 transition-colors">
         <button 
           onClick={() => navigate('/')}
-          title={isCollapsed ? "Exit Admin" : ""}
-          className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all",
-            isCollapsed ? "justify-center" : ""
-          )}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
         >
-          <ArrowLeft size={20} className="flex-shrink-0" />
-          {!isCollapsed && <span>Exit Admin</span>}
+          <ArrowLeft size={20} />
+          Exit Admin
         </button>
         <button 
           onClick={handleLogout}
-          title={isCollapsed ? "Logout" : ""}
-          className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-all",
-            isCollapsed ? "justify-center" : ""
-          )}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
         >
-          <LogOut size={20} className="flex-shrink-0" />
-          {!isCollapsed && <span>Logout</span>}
+          <X size={20} />
+          Sign Out
         </button>
       </div>
     </div>
-  );
-
-  return (
-    <>
-      {/* Mobile Overlay */}
-      <AnimatePresence>
-        {isMobileOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsMobileOpen(false)}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Mobile Sidebar */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 z-50 lg:hidden transition-transform duration-300 ease-in-out transform",
-        isMobileOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        {sidebarContent}
-      </div>
-
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        {sidebarContent}
-      </div>
-    </>
   );
 };
 
@@ -2039,6 +1966,8 @@ const AdminLogTable = ({ logs, blockedEmails, onToggleBlock, showDelete = true, 
 // This is now handled by AuthContext and Firestore
 
 const LoginPage = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -2054,19 +1983,17 @@ const LoginPage = () => {
     }
   }, [user, navigate]);
 
-  const handleGoogleSignIn = async () => {
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const userCredential = await signInWithPopup(auth, googleProvider);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
       // Domain restriction check
       if (userCredential.user.email && !userCredential.user.email.toLowerCase().endsWith('@neu.edu.ph')) {
         await signOut(auth);
-        toast.error("Please use your official @neu.edu.ph account to access the system.", {
-          duration: 5000,
-          icon: '🚫',
-        });
+        alert("Please use your official @neu.edu.ph account to access the system.");
         setError("Unauthorized domain. Use @neu.edu.ph");
         setLoading(false);
         return;
@@ -2078,27 +2005,47 @@ const LoginPage = () => {
       }
       // Redirection is now handled by AppContent based on role
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') {
-        // User closed the popup, don't show a scary error
-        setError('Sign-in was cancelled. Please try again.');
-      } else if (err.code === 'auth/cancelled-popup-request') {
-        // Multiple popup requests, ignore
+      setError('Email or password is incorrect');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      
+      // Domain restriction check
+      if (userCredential.user.email && !userCredential.user.email.toLowerCase().endsWith('@neu.edu.ph')) {
+        await signOut(auth);
+        alert("Please use your official @neu.edu.ph account to access the system.");
+        setError("Unauthorized domain. Use @neu.edu.ph");
+        setLoading(false);
         return;
-      } else {
-        setError('Google Sign-In failed. Please try again.');
-        console.error(err);
       }
+
+      if (!userCredential.user.emailVerified) {
+        navigate('/verify');
+        return;
+      }
+      // Redirection is now handled by AppContent based on role
+    } catch (err: any) {
+      setError('Google Sign-In failed. Please try again.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 dark:bg-[#020617] p-6 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 dark:bg-slate-950 p-6 transition-colors">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md w-full bg-white dark:bg-slate-900/40 p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100 dark:border-slate-800/60 backdrop-blur-md transition-colors"
+        className="max-w-md w-full bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl border border-emerald-100 dark:border-slate-800 transition-colors"
       >
         <div className="text-center mb-10">
           <Logo className="w-24 h-24 mx-auto mb-4" />
@@ -2106,23 +2053,77 @@ const LoginPage = () => {
           <p className="text-slate-500 dark:text-slate-400">Access the Library System</p>
         </div>
 
-        {error && (
-          <div className="p-4 mb-6 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium border border-red-100 dark:border-red-900/30 transition-colors">
-            {error}
+        <form onSubmit={handleAuth} className="space-y-6">
+          {error && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium border border-red-100 dark:border-red-900/30 transition-colors">
+              {error}
+            </div>
+          )}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 transition-colors">Email Address</label>
+            <Input 
+              type="email" 
+              placeholder="admin@neu.edu.ph" 
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              className="text-base h-14 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white transition-colors"
+            />
           </div>
-        )}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 transition-colors">Password</label>
+            <Input 
+              type="password" 
+              placeholder="••••••••" 
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              className="text-base h-14 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white transition-colors"
+            />
+          </div>
+          <Button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-neu-green text-white py-4 text-lg shadow-lg shadow-emerald-100 dark:shadow-none hover:bg-emerald-700 transition-all"
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Button>
+        </form>
+
+        <div className="mt-8 text-center">
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium transition-colors">
+            Don't have an account?{' '}
+            <button onClick={() => navigate('/register')} className="text-neu-green dark:text-emerald-400 font-bold hover:underline">
+              Register
+            </button>
+          </p>
+        </div>
         
-        <div className="flex flex-col gap-4">
+        <div className="mt-6 flex flex-col gap-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 transition-colors">Or continue with</span>
+            </div>
+          </div>
+
           <button 
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-6 py-6 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-700 dark:text-slate-200 font-bold text-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-slate-100 dark:shadow-none dark:backdrop-blur-sm"
+            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 disabled:opacity-50"
           >
-            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-6 h-6" referrerPolicy="no-referrer" />
+            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" referrerPolicy="no-referrer" />
             Sign in with Google
           </button>
         </div>
 
+        <div className="mt-8 text-center">
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium transition-colors">
+            Login using your NEU credentials
+          </p>
+        </div>
       </motion.div>
     </div>
   );
@@ -2643,8 +2644,6 @@ function AppContent() {
 
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const handleSoftDelete = async (logId: string) => {
     if (!user?.email) return;
@@ -2846,17 +2845,17 @@ function AppContent() {
 
   if (isInitialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-emerald-50/10 dark:bg-[#020617]">
+      <div className="min-h-screen flex items-center justify-center bg-emerald-50/10">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-neu-green border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-slate-500 dark:text-slate-400 font-medium">Connecting to NEU LibTrack...</p>
+          <p className="text-slate-500 font-medium">Connecting to NEU LibTrack...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-emerald-50/30 dark:bg-[#020617] transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-emerald-50/30 dark:bg-slate-950 transition-colors duration-300">
       <div className="fixed bottom-6 left-6 z-50">
         <ThemeToggle />
       </div>
@@ -2864,7 +2863,7 @@ function AppContent() {
         {/* Kiosk Routes */}
         <Route path="/" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30 dark:bg-[#020617]">
+            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30 dark:bg-slate-950">
               <KioskHome 
                 savedName={userRoleData?.name}
                 userData={userRoleData}
@@ -2887,10 +2886,11 @@ function AppContent() {
           </ProtectedRoute>
         } />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify" element={<VerificationPage />} />
         <Route path="/profile" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#020617]">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-slate-950">
               <ProfileSection 
                 user={user}
                 userData={userRoleData}
@@ -2901,7 +2901,7 @@ function AppContent() {
         } />
         <Route path="/category" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#020617]">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-slate-950">
               <CategorySelection 
                 onBack={() => navigate('/')}
                 onSelect={(category) => {
@@ -2919,7 +2919,7 @@ function AppContent() {
         } />
         <Route path="/college" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#020617]">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-slate-950">
               <CollegeSelection 
                 onBack={() => {
                   if (userRoleData?.category) {
@@ -2938,7 +2938,7 @@ function AppContent() {
         } />
         <Route path="/reason" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-[#020617]">
+            <div className="flex-1 p-6 bg-emerald-50/30 dark:bg-slate-950">
               <ReasonSelection 
                 onBack={() => {
                   if (userRoleData?.college) {
@@ -2959,7 +2959,7 @@ function AppContent() {
         } />
         <Route path="/success" element={
           <ProtectedRoute allowedRole="student">
-            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30 dark:bg-[#020617]">
+            <div className="flex-1 flex items-center justify-center p-6 bg-emerald-50/30 dark:bg-slate-950">
               <SuccessScreen />
             </div>
           </ProtectedRoute>
@@ -2968,31 +2968,11 @@ function AppContent() {
         {/* Admin Routes */}
         <Route path="/admin/*" element={
           <ProtectedRoute allowedRole="admin">
-            <div className="flex min-h-screen bg-emerald-50/10 dark:bg-[#020617] transition-colors">
-              <AdminSidebar 
-                isCollapsed={isSidebarCollapsed} 
-                setIsCollapsed={setIsSidebarCollapsed}
-                isMobileOpen={isMobileSidebarOpen}
-                setIsMobileOpen={setIsMobileSidebarOpen}
-              />
-              <main className="flex-1 overflow-auto">
-                {/* Mobile Header */}
-                <header className="lg:hidden bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800/60 p-4 sticky top-0 z-30 flex items-center justify-between transition-colors">
-                  <div className="flex items-center gap-3">
-                    <Logo className="w-8 h-8" />
-                    <span className="font-bold text-xl tracking-tight dark:text-white">LibTrack</span>
-                  </div>
-                  <button 
-                    onClick={() => setIsMobileSidebarOpen(true)}
-                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
-                  >
-                    <Menu size={24} />
-                  </button>
-                </header>
-
-                <div className="p-4 md:p-8">
-                  <Routes>
-                    <Route path="/" element={
+            <div className="flex min-h-screen bg-emerald-50/10 dark:bg-slate-950 transition-colors">
+              <AdminSidebar />
+              <main className="flex-1 p-8 overflow-auto">
+                <Routes>
+                  <Route path="/" element={
                     <div className="space-y-8">
                       <div className="flex justify-between items-center">
                         <div>
@@ -3111,10 +3091,9 @@ function AppContent() {
                   />
                 } />
               </Routes>
-            </div>
-          </main>
-        </div>
-      </ProtectedRoute>
+            </main>
+          </div>
+        </ProtectedRoute>
       } />
       </Routes>
 
